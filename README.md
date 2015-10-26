@@ -1,0 +1,2 @@
+# newtonsums
+Newton series transformation
