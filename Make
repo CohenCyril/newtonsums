@@ -1,0 +1,16 @@
+auxresults.v
+fraction.v
+revpoly.v
+xseq.v
+polyorder.v
+polyall.v
+polydec.v
+finmap.v
+truncpowerseries.v
+expansiblefracpoly.v
+finmap.v
+newtonsum.v
+
+-R "." Newtonsums
+
+
