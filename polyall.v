@@ -10,7 +10,10 @@ Require Import ssreflect ssrnat ssrbool eqtype ssralg ssrfun.
 From mathcomp
 Require Import choice seq bigop prime div.
 From mathcomp
-Require Export poly polydiv polyorder.
+Require Export poly polydiv.
+
+From Newtonsums
+Require Import polyorder.
 
 Import GRing.Theory.
 

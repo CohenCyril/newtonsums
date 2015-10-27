@@ -10,7 +10,7 @@ Require Import ssreflect ssrnat ssrbool eqtype ssralg ssrfun.
 From mathcomp
 Require Import choice tuple fintype bigop.
 From Newtonsums
-Require Import xseq polyall.
+Require Import xseq polyorder polyall.
 
 Import GRing.Theory.
 

@@ -1,9 +1,6 @@
 (* (c) Copyright Microsoft Corporation and Inria. All rights reserved. *)
-Require Import mathcomp.ssreflect.ssreflect.
-From mathcomp
-Require Import ssrfun ssrbool eqtype ssrnat div seq choice fintype.
-From mathcomp
-Require Import tuple bigop ssralg poly polydiv generic_quotient.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice fintype.
+From mathcomp Require Import div tuple bigop ssralg poly polydiv generic_quotient.
 From Newtonsums Require Import auxresults.
 
 (* This file builds the field of fraction of any integral domain. *)
@@ -25,7 +22,7 @@ Reserved Notation "{ 'fracpoly' T }" (at level 0, format "{ 'fracpoly'  T }").
 Reserved Notation "x %:F" (at level 2, format "x %:F").
 Reserved Notation "x %:FP" (at level 2, format "x %:FP").
 Reserved Notation "x ^:FP" (at level 2, format "x ^:FP").
-Reserved Notation "p \FPo q" (at level 2, format "p \FPo q").
+Reserved Notation "p \FPo q" (at level 50, format "p  \FPo  q").
 
 Section FracDomain.
 Variable R : ringType.
@@ -55,7 +52,7 @@ Proof. by move=> ny0; rewrite /Ratio /insubd insubT. Qed.
 Lemma denom_Ratio x y : y != 0 -> (Ratio x y).2 = y.
 Proof. by move=> ny0; rewrite /Ratio /insubd insubT. Qed.
 
-Definition numden_Ratio := (numer_Ratio, denom_Ratio).
+Definition RatioK := (numer_Ratio, denom_Ratio).
 
 CoInductive Ratio_spec (n d : R) : {ratio R} -> R -> R -> Type :=
   | RatioNull of d = 0 : Ratio_spec n d ratio0 n 0
@@ -136,11 +133,11 @@ Lemma equivf_def (x y : ratio R) : x == y %[mod type]
                                     = (\n_x * \d_y == \d_x * \n_y).
 Proof. by rewrite eqmodE. Qed.
 
-Lemma equivf_r x : \n_x * \d_(repr (\pi_type x)) = 
+Lemma equivf_r x : \n_x * \d_(repr (\pi_type x)) =
                                                  \d_x * \n_(repr (\pi_type x)).
 Proof. by apply/eqP; rewrite -equivf_def reprK. Qed.
 
-Lemma equivf_l x : \n_(repr (\pi_type x)) * \d_x = 
+Lemma equivf_l x : \n_(repr (\pi_type x)) * \d_x =
                                                  \d_(repr (\pi_type x)) * \n_x.
 Proof. by apply/eqP; rewrite -equivf_def reprK. Qed.
 
@@ -165,13 +162,11 @@ Definition add := lift_op2 {fraction R} addf.
 
 Lemma pi_add : {morph \pi : x y / addf x y >-> add x y}.
 Proof.
-move=> x y; unlock add; apply/eqmodP; rewrite /= equivfE.
-rewrite /addf /= !numden_Ratio ?mulf_neq0 ?domP //.
-rewrite mulrDr mulrDl eq_sym; apply/eqP.
-rewrite !mulrA ![_ * \n__]mulrC !mulrA equivf_l.
-congr (_ + _); first by rewrite -mulrA mulrCA !mulrA.
-rewrite -!mulrA [X in _ * X]mulrCA !mulrA equivf_l.
-by rewrite mulrC !mulrA -mulrA mulrC mulrA.
+move=> x y; unlock add.
+case: piP => x' /eqmodP /eqP eq_x; case: piP => y' /eqmodP /eqP eq_y.
+apply/eqmodP/eqP; rewrite /addf /= !RatioK ?mulf_neq0 ?domP //.
+rewrite mulrDr mulrDl mulrACA eq_x mulrACA; congr (_ + _).
+by rewrite [_ * \d_y']mulrC mulrACA eq_y mulrACA [_ * \d_y]mulrC.
 Qed.
 Canonical pi_add_morph := PiMorph2 pi_add.
 
@@ -180,7 +175,7 @@ Definition opp := lift_op1 {fraction R} oppf.
 Lemma pi_opp : {morph \pi : x / oppf x >-> opp x}.
 Proof.
 move=> x; unlock opp; apply/eqmodP; rewrite /= /equivf /oppf /=.
-by rewrite !numden_Ratio ?(domP,mulf_neq0) // mulNr mulrN -equivf_r.
+by rewrite !RatioK ?(domP,mulf_neq0) // mulNr mulrN -equivf_r.
 Qed.
 Canonical pi_opp_morph := PiMorph1 pi_opp.
 
@@ -190,7 +185,7 @@ Definition mul := lift_op2 {fraction R} mulf.
 Lemma pi_mul : {morph \pi : x y / mulf x y >-> mul x y}.
 Proof.
 move=> x y; unlock mul; apply/eqmodP=> /=.
-rewrite equivfE /= /addf /= !numden_Ratio ?mulf_neq0 ?domP //.
+rewrite equivfE /= /addf /= !RatioK ?mulf_neq0 ?domP //.
 rewrite mulrAC !mulrA -mulrA equivf_r -equivf_l.
 by rewrite mulrA ![_ * \d_y]mulrC !mulrA.
 Qed.
@@ -212,7 +207,7 @@ Canonical pi_inv_morph := PiMorph1 pi_inv.
 Lemma addA : associative add.
 Proof.
 elim/quotW=> x; elim/quotW=> y; elim/quotW=> z; rewrite !piE.
-rewrite /addf /= !numden_Ratio ?mulf_neq0 ?domP // !mulrDl !mulrA !addrA.
+rewrite /addf /= !RatioK ?mulf_neq0 ?domP // !mulrDl !mulrA !addrA.
 by congr (\pi (Ratio (_ + _ + _) _)); rewrite mulrAC.
 Qed.
 
@@ -223,14 +218,14 @@ Qed.
 
 Lemma add0_l : left_id 0%:F add.
 Proof.
-elim/quotW=> x; rewrite !piE /addf !numden_Ratio ?oner_eq0 //.
+elim/quotW=> x; rewrite !piE /addf !RatioK ?oner_eq0 //.
 by rewrite mul0r mul1r mulr1 add0r Ratio_numden.
 Qed.
 
 Lemma addN_l : left_inverse 0%:F opp add.
 Proof.
 elim/quotW=> x; apply/eqP; rewrite piE /equivf.
-rewrite /addf /oppf !numden_Ratio ?(oner_eq0, mulf_neq0, domP) //.
+rewrite /addf /oppf !RatioK ?(oner_eq0, mulf_neq0, domP) //.
 by rewrite mulr1 mulr0 mulNr addNr.
 Qed.
 
@@ -241,7 +236,7 @@ Canonical frac_zmodType := Eval hnf in ZmodType type frac_zmodMixin.
 Lemma mulA : associative mul.
 Proof.
 elim/quotW=> x; elim/quotW=> y; elim/quotW=> z; rewrite !piE.
-by rewrite /mulf !numden_Ratio ?mulf_neq0 ?domP // !mulrA.
+by rewrite /mulf !RatioK ?mulf_neq0 ?domP // !mulrA.
 Qed.
 
 Lemma mulC : commutative mul.
@@ -253,13 +248,13 @@ Qed.
 Lemma mul1_l : left_id 1%:F mul.
 Proof.
 elim/quotW=> x; rewrite !piE /mulf.
-by rewrite !numden_Ratio ?oner_eq0 // !mul1r Ratio_numden.
+by rewrite !RatioK ?oner_eq0 // !mul1r Ratio_numden.
 Qed.
 
 Lemma mul_addl : left_distributive mul add.
 Proof.
 elim/quotW=> x; elim/quotW=> y; elim/quotW=> z; apply/eqP.
-rewrite !piE /equivf /mulf /addf !numden_Ratio ?mulf_neq0 ?domP //; apply/eqP.
+rewrite !piE /equivf /mulf /addf !RatioK ?mulf_neq0 ?domP //; apply/eqP.
 rewrite !(mulrDr, mulrDl) !mulrA; congr (_ * _ + _ * _).
   rewrite ![_ * \n_z]mulrC -!mulrA; congr (_ * _).
   rewrite ![\d_y * _]mulrC !mulrA; congr (_ * _ * _).
@@ -270,10 +265,10 @@ by rewrite -mulrA mulrC [X in X * _] mulrC.
 Qed.
 
 Lemma nonzero1 : 1%:F != 0%:F :> type.
-Proof. by rewrite piE equivfE !numden_Ratio ?mul1r ?oner_eq0. Qed.
+Proof. by rewrite piE equivfE !RatioK ?mul1r ?oner_eq0. Qed.
 
 (* fractions form a commutative ring *)
-Definition frac_comRingMixin := 
+Definition frac_comRingMixin :=
                                ComRingMixin mulA mulC mul1_l mul_addl nonzero1.
 Canonical frac_ringType := Eval hnf in RingType type frac_comRingMixin.
 Canonical frac_comRingType := Eval hnf in ComRingType type mulC.
@@ -281,14 +276,14 @@ Canonical frac_comRingType := Eval hnf in ComRingType type mulC.
 Lemma mulV_l : forall a, a != 0%:F -> mul (inv a) a = 1%:F.
 Proof.
 elim/quotW=> x /=; rewrite !piE.
-rewrite /equivf !numden_Ratio ?oner_eq0 // mulr1 mulr0=> nx0.
+rewrite /equivf !RatioK ?oner_eq0 // mulr1 mulr0=> nx0.
 apply/eqmodP; rewrite /= equivfE.
-by rewrite !numden_Ratio ?(oner_eq0, mulf_neq0, domP) // !mulr1 mulrC.
+by rewrite !RatioK ?(oner_eq0, mulf_neq0, domP) // !mulr1 mulrC.
 Qed.
 
 Lemma inv0 : inv 0%:F = 0%:F.
 Proof.
-rewrite !piE /invf !numden_Ratio ?oner_eq0 // /Ratio /insubd.
+rewrite !piE /invf !RatioK ?oner_eq0 // /Ratio /insubd.
 do 2?case: insubP; rewrite //= ?eqxx ?oner_eq0 // => u _ hu _.
 by congr \pi; apply: val_inj; rewrite /= hu.
 Qed.
@@ -337,16 +332,14 @@ Canonical frac_of_zmodType := Eval hnf in [zmodType of {fraction R}].
 Canonical frac_of_ringType := Eval hnf in [ringType of {fraction R}].
 Canonical frac_of_comRingType := Eval hnf in [comRingType of {fraction R}].
 Canonical frac_of_unitRingType := Eval hnf in [unitRingType of {fraction R}].
-Canonical frac_of_comUnitRingType := 
+Canonical frac_of_comUnitRingType :=
   Eval hnf in [comUnitRingType of {fraction R}].
 Canonical frac_of_idomainType := Eval hnf in [idomainType of {fraction R}].
 Canonical frac_of_fieldType := Eval hnf in [fieldType of {fraction R}].
 
 End Canonicals.
 
-
 Section FracFieldTheory.
-
 Import FracField.
 
 Variable R : idomainType.
@@ -357,23 +350,17 @@ Proof. exact: FracField.Ratio_numden. Qed.
 (* exporting the embeding from R to {fraction R} *)
 Local Notation tofrac := (@FracField.tofrac R).
 Local Notation "x %:F" := (tofrac x).
+Local Notation "x // y" := (x%:F / y%:F) (at level 40).
 
-Lemma tofrac_is_additive: additive tofrac.
+Lemma tofrac_is_rmorphism: rmorphism tofrac.
 Proof.
-move=> p q /=; unlock tofrac.
-rewrite -[X in _ = _ + X]pi_opp -[X in _ = X]pi_add.
-by rewrite /addf /oppf /= !numden_Ratio ?(oner_neq0, mul1r, mulr1).
+unlock tofrac; [do ?split] => [p q|p q|]; rewrite [X in _ = X]piE //=.
+  by rewrite /addf /oppf /= !RatioK ?oner_eq0 ?mulr1.
+by rewrite /mulf !RatioK ?oner_eq0 ?mulr1.
 Qed.
 
-Canonical tofrac_additive := Additive tofrac_is_additive.
-
-Lemma tofrac_is_multiplicative: multiplicative tofrac.
-Proof.
-split=> [p q|//]; unlock tofrac; rewrite -[X in _ = X]pi_mul.
-by rewrite /mulf /= !numden_Ratio ?(oner_neq0, mul1r, mulr1).
-Qed.
-
-Canonical tofrac_rmorphism := AddRMorphism tofrac_is_multiplicative.
+Canonical tofrac_additive := Additive tofrac_is_rmorphism.
+Canonical tofrac_rmorphism := AddRMorphism tofrac_is_rmorphism.
 
 (* tests *)
 Fact tofrac0 : 0%:F = 0. Proof. exact: rmorph0. Qed.
@@ -386,21 +373,13 @@ Fact tofrac1 : 1%:F = 1. Proof. exact: rmorph1. Qed.
 Fact tofracM : {morph tofrac: x y  / x * y}. Proof. exact: rmorphM. Qed.
 Fact tofracX n : {morph tofrac: x / x ^+ n}. Proof. exact: rmorphX. Qed.
 
-Lemma tofrac_eq (p q : R): (p%:F == q%:F) = (p == q).
-Proof.
-apply/eqP/eqP=> [|->//]; unlock tofrac=> /eqmodP /eqP /=.
-by rewrite !numden_Ratio ?(oner_eq0, mul1r, mulr1).
-Qed.
-
-Lemma tofrac_eq0 (p : R): (p%:F == 0) = (p == 0).
-Proof. by rewrite tofrac_eq. Qed.
-
 Lemma tofrac_inj : injective tofrac.
 Proof.
-move => x y.
-move/eqP ; rewrite tofrac_eq.
-by move/eqP.
+move=> p q /=; rewrite piE [RHS]piE => /eqmodP /eqP.
+by rewrite !RatioK ?oner_eq0 // mulr1 mul1r.
 Qed.
+
+Canonical Structure tofrac_injmorphism := InjMorphism tofrac_inj.
 
 Fact mulE (x y : {fraction R}) : x * y = mul x y.
 Proof. by []. Qed.
@@ -408,8 +387,8 @@ Proof. by []. Qed.
 Fact invE (x : {fraction R}) : x ^-1 = inv x.
 Proof. by []. Qed.
 
-Lemma fracE (x : {fraction R}) : {y | x = y.1%:F / y.2%:F & y.2 != 0}.
-Proof. 
+Lemma fracE (x : {fraction R}) : {y | x = y.1 // y.2 & y.2 != 0}.
+Proof.
 elim/quotW: x => y; exists y; last exact: denom_ratioP.
 rewrite !piE mulrC /=.
 set rn := (Ratio \n_y 1).
@@ -419,891 +398,705 @@ rewrite ?numer_Ratio ?denom_Ratio ?oner_neq0 ?(denom_ratioP y) //.
 by rewrite mulr1 mul1r -{1}(Ratio_numden y).
 Qed.
 
+Lemma frac_eq0 (p q : R) : (p // q == 0) = (p == 0) || (q == 0).
+Proof. by rewrite mulf_eq0 invr_eq0 !rmorph_eq0. Qed.
+
+Lemma frac_neq0 (p q : R) : p != 0 -> q != 0 -> p // q != 0.
+Proof. by rewrite frac_eq0 negb_or => -> ->. Qed.
+
 End FracFieldTheory.
 
-Local Notation tofrac := (@FracField.tofrac _).
+Notation tofrac := (@FracField.tofrac _).
+Notation "'@'tofrac" := (@FracField.tofrac).
 Notation "x %:F" := (@FracField.tofrac _ x).
-
-Module EvalFrac.
-Section EvalFrac.
-Import FracField.
-
-Variables (K : fieldType) (R : idomainType) (f : {rmorphism R -> K}).
-
-Definition has_pole x := forall y : R * R, x = y.1%:F / y.2%:F -> f y.2 = 0.
-
-Definition has_non_trivial_root x := 
-  forall y : R * R, x = y.1%:F / y.2%:F  -> f y.1 = 0.
-
-Definition has_root x := (x == 0) \/ (has_non_trivial_root x).
-
-Definition has_general_root x := (has_root x) \/ (has_pole x).
-
-Hypothesis Hfrepr : forall (x : {fraction R}),
-    {y : R * R | x = y.1%:F / y.2%:F & f y.2 != 0} + has_pole x.
-
-Lemma Npole_tofrac (x : R) : ~ (has_pole x%:F).
-Proof.
-rewrite /has_pole => pole_x.
-move: ((pole_x (x, 1))) => /=.
-rewrite !rmorph1 invr1 mulr1 => H.
-move/eqP: (H (erefl x%:F)).
-apply/negP ; exact: oner_neq0.
-Qed. 
-
-Lemma Npole0 : ~ (has_pole 0).
-Proof. 
-rewrite -(rmorph0 [rmorphism of (@tofrac _)]).
-exact: Npole_tofrac.
-Qed.
-
-Lemma nice_repr x : ~ has_pole x -> 
-                                {y : R * R | x = y.1%:F / y.2%:F & f y.2 != 0}.
-Proof. by case: (Hfrepr x). Qed.
-
-Definition f_eval (x : {fraction R}) : K :=
-  if Hfrepr x is inl y then f (projS1 y).1 / f (projS1 y).2 else 0.
-
-Fact tofrac_neq0 x : f x != 0 -> x%:F != 0.
-Proof. by rewrite tofrac_eq0; apply: contraNneq => ->; rewrite rmorph0. Qed.
-Hint Resolve tofrac_neq0.
-
-Lemma f_eval_pole (x : {fraction R}) : has_pole x -> f_eval x = 0.
-Proof.
-rewrite /f_eval; case: Hfrepr => // [[y ? f_y2_neq0]] /(_ y) f_y2_eq0 /=.
-by rewrite f_y2_eq0 ?eqxx in f_y2_neq0 *.
-Qed.
-
-Lemma f_eval_div_frac (y z : R) :
-  f z != 0 -> f_eval (y%:F / z%:F) = (f y) / (f z).
-Proof.
-move=> fz_eq0; rewrite /f_eval.
-case : Hfrepr => [[[y' z'] /= [eq_yz_y'z' fz'_eq0]]|f_eq0]; last first.
-  by rewrite (f_eq0 (y, _)) ?eqxx in fz_eq0.
-symmetry; apply/eqP; move: eq_yz_y'z' => /eqP.
-rewrite !eq_divf ?tofrac_neq0 // -![_ * _ == _]subr_eq0.
-by rewrite -!rmorphM -!rmorphN -!rmorphD tofrac_eq0 => /eqP->; rewrite rmorph0.
-Qed.
-
-Lemma f_eval_frac (x : R) : f_eval (x %:F) = f x.
-Proof.
-have -> : x%:F = x%:F / 1%:F :> {fraction R} by rewrite rmorph1 divr1.
-by rewrite f_eval_div_frac ?rmorph0 ?rmorph1 ?divr1 ?oner_eq0.
-Qed.
-
-Lemma f_eval0 : f_eval 0 = 0.
-Proof. by rewrite -tofrac0 f_eval_frac rmorph0. Qed.
-
-Lemma f_eval_root (x : {fraction R}) : has_root x -> f_eval x = 0.
-Proof.
-move => [/eqP -> | x_has_non_trivial_root] ; first exact: f_eval0.
-move: (Hfrepr x) => [[[y1 y2] /= Hx fy2_neq0] | x_has_pole].
-+ rewrite Hx f_eval_div_frac //.
-  by rewrite (x_has_non_trivial_root (y1, y2) Hx) mul0r.
-+ by apply: f_eval_pole.
-Qed.
-
-Fact aux_has_poleN (x : {fraction R}) : has_pole x -> has_pole (-x).
-Proof.
-move => x_pole [u1 u2] /= Hx.
-have: x = u1%:F / (- u2%:F) by rewrite invrN mulrN -Hx opprK.
-rewrite -tofracN => H.
-apply/eqP ; rewrite -oppr_eq0 -rmorphN.
-by move: (x_pole (_, _ ) H) => /= ->.
-Qed.
-
-Lemma has_poleN (x : {fraction R}) : has_pole (-x) <-> has_pole x.
-Proof.
-split ; last by exact: aux_has_poleN.
-by move/aux_has_poleN; rewrite opprK.
-Qed.
-
-Lemma f_eval_div (y z : {fraction R}) :
-  f_eval z != 0 -> f_eval (y / z) = (f_eval y) / (f_eval z).
-Proof.
-have [[[x1 x2] /= ]|x_pole] := Hfrepr (y / z) ; have [[[y1 y2] /= ]|y_pole] := 
-  Hfrepr y ; have [[[z1 z2] /= ]|z_pole] := Hfrepr z.
-+ move => Hz fz2_neq0 Hy fy2_neq0 Hx fx2_neq0.
-  rewrite Hz f_eval_div_frac // mulf_eq0 => /norP [fz1_neq0 _].
-  rewrite Hy !invf_div !mulf_div -!tofracM !f_eval_div_frac // ; 
-    last by rewrite rmorphM ; apply: mulf_neq0 => //.
-  by rewrite mulf_div !rmorphM.
-+ move => Hy fy2_neq0 Hx fx2_neq0.
-  by rewrite [f_eval z]f_eval_pole // eq_refl.
-+ move => Hz fz2_neq0 Hx fx2_neq0 fz_neq0.
-  have: z != 0 by move: fz_neq0 ; apply: contra => /eqP -> ; rewrite f_eval0.
-  move => z_neq0.
-  move: Hx.
-  move/(congr1 (fun x => x * z)).
-  rewrite mulrAC -mulrA divff // mulr1 Hz mulf_div -!tofracM => Hx.
-  move: ((y_pole (_ ,_)) Hx) => /= /eqP.
-  rewrite rmorphM mulf_eq0.
-  move/negbTE in fz2_neq0. 
-  move/negbTE in fx2_neq0. 
-  by rewrite fz2_neq0 fx2_neq0.
-+ move: (fracE z) => [[z1 z2] /= Hy].
-  by rewrite [f_eval z]f_eval_pole // eqxx.
-+ move => Hz fz2_neq0 Hy fy2_neq0. 
-  rewrite Hz f_eval_div_frac // mulf_eq0 GRing.invr_eq0 => /norP [fz1_neq0 _].
-  rewrite Hy !f_eval_div_frac // !invf_div.    
-  rewrite !mulf_div -!tofracM f_eval_div_frac ; 
-    last by rewrite rmorphM mulf_neq0 //.
-  by rewrite -!rmorphM.
-+ move => Hy fy2_neq0.
-  by rewrite [f_eval _]f_eval_pole // eqxx. 
-+ move => Hz fz2_neq0 fz_neq0.
-  rewrite [f_eval (y / z)]f_eval_pole //. 
-  by rewrite [f_eval y]f_eval_pole // mul0r. 
-rewrite [f_eval (y / z)]f_eval_pole //. 
-rewrite [f_eval y]f_eval_pole //. 
-by rewrite mul0r.
-Qed.
-
-Lemma f_eval1 : f_eval 1 = 1.
-Proof. by rewrite -tofrac1 f_eval_frac rmorph1. Qed.
-
-Lemma f_eval_invx (x : {fraction R}) : has_pole x -> f_eval (x ^-1) = 0.
-Proof.
-move => x_pole.
-have [[[a b] /= ]|invx_pole] := Hfrepr (x ^-1) ; 
-  last by rewrite [f_eval _]f_eval_pole //.
-rewrite -invf_div => Hinvx ; rewrite Hinvx.
-move/invr_inj : Hinvx ; rewrite invf_div => Hx.
-move: (x_pole (b, a)) => /= H.
-move: (H Hx) => -Hfa Hfb.
-by rewrite f_eval_div_frac // Hfa mul0r.
-Qed.
-
-Fact zero_has_root : has_root 0.
-Proof. left; exact: eqxx. Qed.
-Hint Resolve zero_has_root. 
-
-Lemma invx_has_pole (x : {fraction R}) : x != 0 -> 
-  ((has_pole (x ^-1)) <-> (has_root x)).
-Proof.
-move/eqP => x_neq0.
-split.
-  move => H; right; move => y.
-  rewrite -invf_div -[x]invrK => /invr_inj Hinvx.
-  by move: (H (y.2, y.1)) => ->.
-move => [/eqP * // | x_root] => y.
-rewrite -invf_div => /invr_inj Hx.
-by move: (x_root (y.2, y.1)) => ->.
-Qed.
-
-Lemma f_eval_invx_eq0 (x : {fraction R}) : f_eval x = 0 -> f_eval (x ^-1) = 0.
-Proof.
-have [[[x1 x2] /= ]|x_pole] := Hfrepr (x) ; last by rewrite f_eval_invx.
-have [[[x1' x2'] /= ]|invx_pole] := Hfrepr (x ^-1) ; last first.
-  by rewrite [f_eval x ^-1]f_eval_pole.
-move => Hinvx fx2'_neq0 Hx fx2_neq0 ; rewrite Hinvx.
-have [fx1'_eq0 | fx1'_neq0] := eqVneq (f x1') 0.
-  by rewrite f_eval_div_frac // fx1'_eq0 mul0r.
-move/eqP : Hinvx ; rewrite -{1}invf_div (inj_eq invr_inj) => /eqP ->.
-rewrite [f_eval (x2'%:F / x1'%:F)]f_eval_div_frac // => /eqP.
-rewrite mulf_eq0 invr_eq0.
-move/negbTE in fx2'_neq0 ; move/negbTE in fx1'_neq0.
-by rewrite fx2'_neq0 fx1'_neq0.
-Qed.
-
-Lemma f_eval_inv (x : {fraction R}) : f_eval (x ^-1) = (f_eval x)^-1.
-Proof.
-have [[[x1 x2] /= ]|x_pole] := Hfrepr (x) ; last first. 
-  by rewrite [f_eval x]f_eval_pole // (f_eval_invx x_pole) GRing.invr0. 
-have [fx_eq0 | ] := eqVneq (f_eval x) 0. 
-  by rewrite fx_eq0 invr0 (f_eval_invx_eq0 fx_eq0).
-move => fx_neq0 Hx fx2_neq0.
-have fx1_neq0 : (f x1) != 0.
-  apply/eqP => fx1_eq0.
-  by move: fx_neq0 ; rewrite Hx f_eval_div_frac // fx1_eq0 mul0r eqxx. 
-by rewrite Hx invf_div f_eval_div_frac // invf_div f_eval_div_frac.
-Qed.
-
-Lemma f_evalM (x y : {fraction R}) :
-          ~ has_pole x -> ~ has_pole y -> f_eval (x * y) = f_eval x * f_eval y.
-Proof.
-move => /nice_repr [[x1 x2]-> /= fx2_neq0] 
-        /nice_repr [[y1 y2]-> /= fy2_neq0].
-rewrite mulrACA -invfM -!rmorphM !f_eval_div_frac // !rmorphM ?mulf_neq0 //.
-by rewrite mulrACA -invfM.
-Qed.
-
-Lemma f_evalD (x y : {fraction R}) :
-          ~ has_pole x -> ~ has_pole y -> f_eval (x + y) = f_eval x + f_eval y.
-Proof.
-move => /nice_repr [[x1 x2]-> /= fx2_neq0] 
-        /nice_repr [[y1 y2]-> /= fy2_neq0].
-rewrite addf_div ; last 2 first.
-  + move: fx2_neq0 ; apply: contra.
-    by rewrite tofrac_eq0 => /eqP -> ; rewrite rmorph0.
-  + move: fy2_neq0 ; apply: contra.
-    by rewrite tofrac_eq0 => /eqP -> ; rewrite rmorph0.
-rewrite -!rmorphM -rmorphD !f_eval_div_frac // ; last first.
-  by rewrite rmorphM mulf_eq0 ; apply/norP.
-by symmetry ; rewrite rmorphD !rmorphM addf_div.
-Qed.
-
-Lemma f_evalN (x : {fraction R}) : f_eval (-x) = -f_eval x.
-Proof.
-have [[[x1 x2] /= ]|x_pole] := Hfrepr (x) ; last first.
-  move/has_poleN : (x_pole) => Nx_pole. (* does not work without parenthesis*)
-  by rewrite !f_eval_pole // oppr0.
-move -> => fx2_neq0.
-rewrite -mulrN -invrN -tofracN !f_eval_div_frac ?rmorphN // ?invrN ?mulrN //. 
-by rewrite oppr_eq0.
-Qed.
-
-Section Injective_f.
-
-Hypothesis f_inj : injective f.
-
-Lemma has_no_pole (x : {fraction R}) : ~ (has_pole x).
-Proof.
-have [[y1 y2] -> /= {x}] := fracE x => /eqP y_neq0 x_pole.
-move: (x_pole (y1,y2)) => /= H.
-move/eqP : (H (erefl _)) ; rewrite -(rmorph0 f).
-by move/eqP/(f_inj).
-Qed.
-Hint Resolve has_no_pole.
-
-Lemma frepr : forall (x : {fraction R}),
-  {y : R * R | x = y.1%:F / y.2%:F & f y.2 != 0}.
-Proof.
-move => x.
-have [[y1 y2] /= Hx y2_neq0] := fracE x.
-exists ((y1, y2)) => //= ; rewrite -(rmorph0 f). 
-move: y2_neq0 ; apply: contra.
-by move/eqP/f_inj => ->.
-Qed.
-
-Fact f_eval_is_additive : additive f_eval.
-Proof. move => x y ; by rewrite f_evalD // -f_evalN. Qed.
-
-Canonical f_eval_additive := Additive f_eval_is_additive.
-
-Fact f_eval_is_multiplicative : multiplicative f_eval.
-Proof. 
-split ; last by exact: f_eval1.
-by move => x y ; rewrite f_evalM.
-Qed.
-
-Canonical f_eval_rmorphism := AddRMorphism f_eval_is_multiplicative.
-
-End Injective_f.
-
-End EvalFrac.
-End EvalFrac.
+Notation "x // y" := (x%:F / y%:F) (at level 40).
 
 Notation "{ 'fracpoly' K }" := {fraction {poly K}}.
+Definition tofracpoly {K : fieldType} : K -> {fracpoly K} := tofrac \o polyC.
 
-Module EvalRatFrac.
-Section EvalRatFrac.
-Import EvalFrac.
+Notation "x %:FP" := (tofracpoly x) : ring_scope.
+Local Notation "p ^ f" := (map_poly f p) : ring_scope.
+Local Notation "p ^:FP" := (p ^ (@tofracpoly _)) : ring_scope.
 
-Variable (K : fieldType).
+Notation "''XF'" := ('X%:F) : ring_scope.
+Notation "''X^+' n" := ('X%:F ^+ n)
+ (at level 3, n at level 2, format "''X^+' n") : ring_scope.
+Notation "''X^-' n" := ('X%:F ^- n)
+ (at level 3, n at level 2, format "''X^-' n") : ring_scope.
+Notation "''X^-1'" := ('X%:F)^-1 : ring_scope.
 
-Definition to_fracpoly : K -> {fracpoly K} := tofrac \o polyC. 
+Canonical tofracpoly_is_additive (K : fieldType) :=
+  [additive of @tofracpoly K].
+Canonical tofracpoly_is_rmorphism (K : fieldType) :=
+  [rmorphism of @tofracpoly K].
+Canonical tofracpoly_is_injmorphism (K : fieldType) :=
+  [injmorphism of @tofracpoly K].
 
-Notation "x %:FP" := (to_fracpoly x).
+Module RegMorphism.
 
-Canonical to_fracpoly_rmorphism := [rmorphism of to_fracpoly].
+Section ClassDef.
 
-Lemma to_fracpoly_inj : injective to_fracpoly.
+Variables (R : idomainType) (K : fieldType).
+
+Definition mixin_of (f : R -> K) : Type  :=
+  forall x,
+  {y : R * R | x = y.1 // y.2 & f y.2 != 0} +
+  forall y1 y2, x = y1 // y2 -> f y2 = 0.
+
+Record class_of f : Type := Class {base : rmorphism f; mixin : mixin_of f}.
+Local Coercion base : class_of >-> rmorphism.
+
+Structure map (phRS : phant (R -> K)) := Pack {apply; _ : class_of apply}.
+Local Coercion apply : map >-> Funclass.
+Variables (phRS : phant (R -> K)) (f g : R -> K) (cF : map phRS).
+
+Definition class := let: Pack _ c as cF' := cF return class_of cF' in c.
+
+Definition clone fM of phant_id g (apply cF) & phant_id fM class :=
+  @Pack phRS f fM.
+
+Definition pack (fM : mixin_of f) :=
+  fun (bF : GRing.RMorphism.map phRS) fA & phant_id (GRing.RMorphism.class bF) fA =>
+  Pack phRS (Class fA fM).
+
+Canonical rmorphism := GRing.RMorphism.Pack phRS class.
+Canonical additive := GRing.Additive.Pack phRS class.
+
+End ClassDef.
+
+Module Exports.
+Notation regular_dec f := (mixin_of f).
+Notation regmorphism f := (class_of f).
+Coercion base : regmorphism >-> GRing.RMorphism.class_of.
+Coercion mixin : regmorphism >-> mixin_of.
+Coercion apply : map >-> Funclass.
+Notation RegMorphism fM := (pack fM id).
+Notation "{ 'regmorphism' fRS }" := (map (Phant fRS))
+  (at level 0, format "{ 'regmorphism'  fRS }") : ring_scope.
+Notation "[ 'regmorphism' 'of' f 'as' g ]" := (@clone _ _ _ f g _ _ idfun id)
+  (at level 0, format "[ 'regmorphism'  'of'  f  'as'  g ]") : form_scope.
+Notation "[ 'regmorphism' 'of' f ]" := (@clone _ _ _ f f _ _ id id)
+  (at level 0, format "[ 'regmorphism'  'of'  f ]") : form_scope.
+Coercion additive : map >-> GRing.Additive.map.
+Canonical additive.
+Coercion rmorphism : map >-> GRing.RMorphism.map.
+Canonical rmorphism.
+End Exports.
+
+End RegMorphism.
+Include RegMorphism.Exports.
+
+Section EvalInjective.
+
+Variable (R : idomainType) (K : fieldType) (f : {injmorphism R -> K}).
+
+Lemma injective_regular_dec : regular_dec f.
 Proof.
-apply: inj_comp; first exact: tofrac_inj.
-by exact: polyC_inj.
+move=> x; have [[x1 x2] /= -> x2_neq0] := fracE x.
+by left; exists (x1, x2); rewrite //= rmorph_eq0.
 Qed.
 
-Local Notation "p ^ f" := (map_poly f p).
-Local Notation "p ^:FP" := (p ^ to_fracpoly).
+Canonical injective_is_regmorphism := RegMorphism injective_regular_dec.
 
-Lemma to_fracpoly0 : 0 ^:FP = 0.
-Proof. exact: map_poly0. Qed.
+End EvalInjective.
 
-Lemma to_fracpoly_eq0 x : (x ^:FP == 0) = (x == 0).
+Section EvalFrac.
+
+Variables (R : idomainType) (K : fieldType) (f : {regmorphism R -> K}).
+Implicit Types (x : {fraction R}).
+
+Definition freprP := RegMorphism.mixin (RegMorphism.class f).
+
+Fact fpole_key : unit. Proof. exact: tt. Qed.
+Definition fpole_of (phf: phantom (R -> K) f) := locked_with fpole_key
+  (fun x => if freprP x is inr _ then true else false).
+Local Notation fpole := (fpole_of (Phantom (R -> K) f)).
+Canonical fpole_unlockable := [unlockable fun fpole].
+
+Lemma fpoleP {x} : reflect (forall y1 y2, x = y1 // y2 -> f y2 = 0) (fpole x).
 Proof.
-apply/idP/idP ; last by move/eqP -> ; rewrite to_fracpoly0.
-by rewrite -to_fracpoly0 ; move/eqP/(map_poly_inj [rmorphism of _]) ->.
+rewrite unlock; case: freprP => [[y -> fy2]|]; constructor => //.
+by move=> /(_ _ _ erefl); apply/eqP.
 Qed.
 
-Lemma  map_to_fracpoly_scale (c : K) (p : {poly K}) : 
-  (c *: p)^:FP = (c %:FP) *: (p ^:FP).
-Proof. by rewrite linearZ_LR. Qed.
+Definition froot_of (phf: phantom (R -> K) f) x := (fpole x^-1).
+Local Notation froot := (froot_of (Phantom (R -> K) f)).
 
-Variable (a : K).
+Fact feval_key : unit. Proof. exact: tt. Qed.
+(* feval theory *)
+Definition feval_of (phf: phantom (R -> K) f) : _ -> K := locked_with feval_key
+  (fun x =>
+   let frepr x := if freprP x is inl (exist2 y _ _) then y else (0, 0) in
+   f (frepr x).1 / f (frepr x).2).
+Local Notation feval := (feval_of (Phantom (R -> K) f)).
+Canonical feval_unlockable := [unlockable fun feval].
 
-Definition ev := [rmorphism of horner_eval a].
+Inductive feval_spec x : {fraction R} ->  bool -> K -> Type :=
+| HasPoleEval of fpole x : feval_spec x x true 0
+| HasNoPoleEval y1 y2 of f y2 != 0 : feval_spec x (y1 // y2) false (f y1 / f y2).
 
-Lemma evC (c : K) : ev c%:P = c.
-Proof. by rewrite /ev /= horner_evalE hornerC. Qed.
-
-Lemma evX : ev 'X = a.
-Proof. by rewrite /ev /= horner_evalE hornerX. Qed.
-
-Fact aux_irreducible_has_pole (u v : {poly K}) :
-  (u %:F / v %:F) != 0 -> ev v = 0 -> coprimep u v ->
-  has_pole ev (u %:F / v %:F).
+Lemma fevalP x : feval_spec x x (fpole x) (feval x).
 Proof.
-move => x_neq0 ev_v_eq0 coprime_u_v [y1 y2] /=.
-have v_neq0 : v%:F != 0.
-  apply/negP => /eqP v_eq0.
-  by move: x_neq0 ; rewrite v_eq0 invr0 mulr0 eqxx.
-have [-> | y2_neq0] := eqVneq y2 0 ; first by rewrite horner_evalE hornerC.
-have ev_u_neq0 : ev u != 0.
-  rewrite /ev /= horner_evalE.
-  apply/negP => /eqP /polyXsubCP ev_u_eq0.
-  move/polyXsubCP : ev_v_eq0 => ev_v_eq0.
-  move/coprimepP : coprime_u_v => coprime_u_v.
-  move : (coprime_u_v ('X - a%:P)) => H.
-  move : (H ev_u_eq0 ev_v_eq0).
-  by rewrite polyXsubC_eqp1.
-move/eqP ; rewrite eq_divf // ?tofrac_eq0 //.
-rewrite -!tofracM tofrac_eq.
-move/eqP/(congr1 ev).
-rewrite !rmorphM ev_v_eq0 mulr0 => /eqP ; rewrite mulf_eq0.
-move/negbTE : ev_u_neq0 => ->.
-by rewrite orFb => /eqP ->.
+rewrite !unlock.
+case: freprP => [[y->]|]; rewrite ?rmorph0 ?mul0r; constructor => //.
+exact/fpoleP.
 Qed.
 
-Lemma irreducible_has_pole (u v : {poly K}) :
-  (u %:F / v %:F) != 0 -> coprimep u v ->
-  reflect (has_pole ev (u %:F / v %:F)) (ev v == 0).
+Lemma fpolePn {x : {fraction R}} :
+   reflect (exists2 y, x = y.1 // y.2 & f y.2 != 0) (~~ fpole x).
 Proof.
-move => x_neq0 coprime_u_v.
-apply/(equivP eqP) ; split ; last first.
-  move => H_pole.
-  by apply: (H_pole (u, v)).
-by move => * ; apply: aux_irreducible_has_pole.
+case: fevalP=> [/fpoleP fy2_eq0|y1 y2]; constructor; last by exists (y1, y2).
+by move=> [y /fy2_eq0 ->]; rewrite eqxx.
 Qed.
 
-Fact coprimep01 (K' : fieldType ): coprimep (0 : {poly K}) (1 : {poly K}).
-Proof. by rewrite coprimep_sym coprimep0 
-                                      -size_poly_eq1 size_polyC oner_neq0. Qed.
-
-Lemma fracpolyE (p : {fracpoly K}) : 
-    {q : {poly K} * {poly K} | p = (q.1)%:F / (q.2)%:F & (q.2 != 0) && 
-    (coprimep q.1 q.2)}.
+Lemma frootP {x} : reflect (forall y1 y2, x = y1 // y2 -> f y1 = 0) (froot x).
 Proof.
-move: (fracE p) => [[u v] /= Hx] v_neq0.
-have [p_eq0 | p_neq0] := eqVneq p 0.
-  exists (0,1) ; first by rewrite p_eq0 tofrac0 !mul0r.
-  rewrite oner_neq0 coprimep_sym coprimep0.
-  by rewrite -size_poly_eq1 size_polyC oner_neq0.
-pose u' := u %/ (gcdp u v) ; pose v' := v %/ (gcdp u v) ; exists (u', v').
-+ apply/eqP ; rewrite Hx eq_divf ?tofrac_eq0 //= ; last first. 
-    by rewrite dvdp_div_eq0 // dvdp_gcdr.
-  move : (dvdp_gcdl u v) (dvdp_gcdr u v).
-  rewrite !dvdp_eq => /eqP Hu /eqP Hv.
-  by rewrite -!tofracM tofrac_eq Hv {1}Hu -mulrA [X in _ * X]mulrC.
-+ apply/andP ; split.
-- rewrite divp_eq0 ; apply/or3P ; case.
-  -- by move/negbTE: v_neq0 ->.
-  -- rewrite gcdp_eq0 => /andP [/eqP u_eq0 _].
-     move: Hx ; rewrite u_eq0 rmorph0 mul0r => /eqP.
-     by apply/negP.
-- apply/negP ; rewrite -leqNgt.
-  by apply: leq_gcdpr.
-by apply: coprimep_div_gcd ; apply/orP ; right.
+apply: (equivP fpoleP); pose V := (congr1 (@GRing.inv _)).
+by split=> fy0 y1 y2 /V; rewrite ?invrK invf_div; apply: fy0.
 Qed.
 
-Lemma associate_num_fracpolyE (p q : {poly K}) : q != 0 ->
-  coprimep p q ->
-  p %= (projT1 (fracpolyE (p %:F/ q %:F))).1.
+Lemma frootPn {x} : reflect (exists2 y, x = y.1 // y.2 & (f y.1 != 0))
+                            (~~ froot x).
 Proof.
-move => q_neq0 coprime_p_q.
-move: (fracpolyE (p %:F/ q %:F)) => [[u v] /= Hx] /andP [v_neq0 coprime_u_v].
-move/eqP: Hx.
-rewrite eq_divf ?tofrac_eq0 // -!rmorphM tofrac_eq /eqp => /eqP H.
-rewrite -(Gauss_dvdpl _ coprime_p_q) -H dvdp_mulIl.
-by rewrite -(Gauss_dvdpl _ coprime_u_v) H dvdp_mulIl.
+apply: (equivP fpolePn); pose V := (congr1 (@GRing.inv _)).
+by split=> [] [y /V]; rewrite ?invrK invf_div => ->; exists (y.2, y.1).
 Qed.
 
-Lemma associate_denom_fracpolyE (p q : {poly K}) : q != 0 ->
-  coprimep p q ->
-  q %= (projT1 (fracpolyE (p %:F/ q %:F))).2.
+Lemma fpoleV x : fpole (x ^-1) = froot x. Proof. by []. Qed.
+
+Lemma frootV x : froot (x ^-1) = fpole x.
+Proof. by rewrite /froot invrK. Qed.
+
+Lemma froot_div x y : froot (x / y) = fpole (y / x).
+Proof. by rewrite /froot invf_div. Qed.
+
+Lemma den_fpole_eq0 (x y : R) : fpole (x // y) -> f y = 0.
+Proof. by move=> /fpoleP /(_ x) ->. Qed.
+
+Lemma fpole_fracF (x y : R) : f y != 0 -> fpole (x // y) = false.
+Proof. by apply: contraNF => /den_fpole_eq0 ->. Qed.
+
+Lemma fpole_tofrac (x : R) : fpole x%:F = false.
+Proof. by rewrite -[x%:F]divr1 fpole_fracF // rmorph1 oner_eq0. Qed.
+
+Lemma fpole0 : fpole 0 = false.
+Proof. by rewrite fpole_tofrac. Qed.
+
+Fact felem_eq0F (x : R) : f x != 0 -> (x == 0) = false.
+Proof. by apply: contraNF => /eqP ->; rewrite rmorph0. Qed.
+
+Lemma fpole_frac (x y : R) : y != 0 -> f x != 0 -> fpole (x // y) = (f y == 0).
 Proof.
-move => q_neq0 coprime_p_q.
-rewrite coprimep_sym in coprime_p_q.
-move: (fracpolyE (p %:F/ q %:F)) => [[u v] /= Hx] /andP [v_neq0 coprime_u_v].
-rewrite coprimep_sym in coprime_u_v.
-move/eqP: Hx; rewrite eq_divf ?tofrac_eq0 // -!rmorphM tofrac_eq /eqp=> /eqP H.
-rewrite -(Gauss_dvdpr _ coprime_p_q) H dvdp_mulIr.
-by rewrite -(Gauss_dvdpr _ coprime_u_v) -H dvdp_mulIr.
+move=> y_neq0 fx_neq0; have [fy_eq0|/fpole_fracF-> //] := altP eqP.
+apply/fpoleP => x' y' /eq_divf_mul.
+rewrite frac_neq0 // ?felem_eq0F // => /(_ isT).
+rewrite -!rmorphM => /tofrac_inj /(congr1 f) /eqP.
+by rewrite !rmorphM /= fy_eq0 mulr0 mulf_eq0 (negPf fx_neq0) /= => /eqP.
 Qed.
 
-Fact eqp_neq0P (p q : {poly K}) : p != 0 -> 
-                               reflect (exists (c : K), (p = c *: q)) (p %= q).
+Lemma froot_fracF (x y : R) : f x != 0 -> froot (x // y) = false.
+Proof. by rewrite froot_div; apply: fpole_fracF. Qed.
+
+Lemma froot0 : froot 0 = false. Proof. by rewrite /froot invr0 fpole0. Qed.
+
+Lemma num_froot_eq0 (x y : R) : froot (x // y) -> f x = 0.
+Proof. by apply: contraTeq => /froot_fracF ->. Qed.
+
+Lemma froot_frac (x y : R) : x != 0 -> f y != 0 -> froot (x // y) = (f x == 0).
+Proof. by rewrite froot_div; apply: fpole_frac. Qed.
+
+Lemma froot_tofrac (x : R) : x != 0 -> froot x%:F = (f x == 0).
 Proof.
-move => p_neq0.
-apply: (equivP (eqpP p q)) ; split.
-+ move => [[c1 c2] /= /andP [c1_neq0 c2_neq0]] Hpq.
-  exists (c2 / c1) ; apply: (scalerI c1_neq0).
-  by rewrite Hpq scalerA mulrCA divff // mulr1.
-+ move => [c H].
-  exists (1, c) => /=.
-- rewrite oner_neq0 andTb ; apply/negP => /eqP c_eq0.
-  move: H ; rewrite c_eq0 scale0r.
-  by move/eqP ; move/negbTE: p_neq0 ->.
-- by rewrite scale1r.
+by move=> x_neq0; rewrite -[x%:F]mulr1 -invr1 froot_frac ?rmorph1 ?oner_eq0.
 Qed.
 
-Lemma associate_fracpolyE (p q : {poly K}) : q != 0 -> coprimep p q ->
-  let (u, v) := projT1 (fracpolyE (p %:F/ q %:F)) in
-  exists (c : K), ((p == c *: u) && (q == c *: v)).
+Lemma froot1 : froot 1 = false.
+Proof. by rewrite froot_tofrac ?rmorph1 ?oner_eq0. Qed.
+
+Lemma fpoleN x : fpole (- x) = fpole x.
 Proof.
-move => q_neq0 coprime_p_q.
-move: (associate_denom_fracpolyE q_neq0 coprime_p_q)
-      (associate_num_fracpolyE q_neq0 coprime_p_q).
-move: (fracpolyE (p %:F/ q %:F)) => [[u v] /= Hx] /andP [v_neq0 coprime_u_v].
-move/(eqp_neq0P v q_neq0) => [cv /eqP Hcv].
-have [p_eq0 | p_neq0] := eqVneq p 0.
-+ move/eqP : Hx ; rewrite p_eq0 rmorph0 mul0r eq_sym mulf_eq0 invr_eq0. 
-  rewrite !tofrac_eq0 ; move/negbTE : v_neq0 ->.
-  rewrite orbF ; move/eqP => -> _.
-  by exists cv ; rewrite scaler0 eqxx Hcv.
-+ move/(eqp_neq0P u p_neq0) => [cu Hcu].
-  move/eqP : Hx.
-  rewrite eq_divf ?tofrac_eq0 // -!rmorphM tofrac_eq.
-  move/eqP : Hcv => Hcv.
-  rewrite {1}Hcu {1}Hcv -scalerCA -subr_eq0 -!scalerAl -scalerBl scaler_eq0.
-  rewrite subr_eq0 mulf_eq0. 
-  move/orP => [/eqP dsa | /orP [/eqP u_eq0 | /eqP v_eq0]].
-- by exists cu ; rewrite Hcu dsa Hcv !eqxx.
-- by move: p_neq0 ; rewrite Hcu u_eq0 scaler0 eqxx.
-- by move: q_neq0 ; rewrite Hcv v_eq0 scaler0 eqxx.
+gen have fpoleN : x / fpole (- x) -> fpole x; last first.
+  by apply/idP/idP => ?; apply/fpoleN; rewrite ?opprK.
+case: (fevalP x) => // y1 y2 fy2; move=> /(congr1 negb) /= <-.
+by rewrite -mulNr -rmorphN fpole_fracF.
 Qed.
 
-Lemma fracpoly_div_tofracl (p q : {poly K}) : q != 0 ->
-  let (u, v) := projT1 (fracpolyE (p %:F/ q %:F)) in
-  u %| p.
+Lemma frootN x : froot (- x) = froot x.
+Proof. by rewrite /froot invrN fpoleN. Qed.
+
+(* Theory of feval *)
+
+Lemma feval_frac (y z : R) : f z != 0 -> feval (y // z) = (f y) / (f z).
 Proof.
-move => q_neq0.
-move: (fracpolyE (p %:F/ q %:F)) => [[u v] /= Hx] /andP [v_neq0 coprime_u_v].
-move/eqP: Hx ; rewrite eq_divf ?tofrac_eq0 // -!rmorphM tofrac_eq => /eqP H.
-by rewrite -(Gauss_dvdpl _ coprime_u_v) H dvdp_mulIl.
+move=> fz; have := erefl (y // z).
+case: {-1}_ _ _ / fevalP fz => //= [/fpoleP /(_ _ _ erefl) /eqP -> //|].
+move=> y' z' /= fz' fz /eqP; rewrite eq_divf ?rmorph_eq0 ?felem_eq0F //.
+rewrite -!rmorphM rmorph_eq => /eqP eqyz'.
+by apply/eqP; rewrite eq_divf // -!rmorphM eqyz'.
 Qed.
 
-Lemma fracpoly_div_tofracr (p q : {poly K}) : q != 0 ->
-  let (u, v) := projT1 (fracpolyE (p %:F/ q %:F)) in
-  v %| q.
+Lemma feval_neq0P {x} : reflect (exists2 y, x = y.1 // y.2 & (f y.1 != 0) && (f y.2 != 0))
+                            (feval x != 0).
 Proof.
-move => q_neq0.
-move: (fracpolyE (p %:F/ q %:F)) => [[u v] /= Hx] /andP [v_neq0 coprime_u_v].
-move/eqP: Hx ; rewrite eq_divf ?tofrac_eq0 // -!rmorphM tofrac_eq => /eqP H.
-rewrite coprimep_sym in coprime_u_v.
-by rewrite -(Gauss_dvdpr _ coprime_u_v) -H dvdp_mulIr.
+apply: (iffP idP) => [|[{x} x -> /andP [fx1 fx2]]]; last first.
+  by rewrite feval_frac  // ?mulf_neq0 ?invr_eq0.
+case: fevalP => [x_pole|{x} x1 x2 fx2_neq0]; rewrite ?eqxx //.
+rewrite mulf_eq0 negb_or invr_eq0 fx2_neq0 andbT => fx1_neq0.
+by exists (x1, x2); rewrite //= ?mulf_neq0 ?fx1_neq0.
 Qed.
 
-Lemma evrepr : forall (x : {fracpoly K}),
-  {y : {poly K} * {poly K} | 
-      x = y.1%:F / y.2%:F & (ev y.2 != 0) && (coprimep y.1 y.2)} 
-  + has_pole ev x.
+Lemma feval_eq0P {x} : reflect (forall y1 y2, x = y1 // y2 -> (f y1 == 0) || (f y2 == 0))
+                            (feval x == 0).
 Proof.
-move => x.
-move: (fracpolyE x) => [[u v] /= Hx] /andP [v_neq0 coprime_u_v].
-have [u_eq0 | u_neq0] := eqVneq u 0.
-  left ; exists (0,1) ; first by rewrite Hx u_eq0 tofrac0 !mul0r.
-  rewrite rmorph1 oner_neq0 coprimep_sym coprimep0.
-  by rewrite -size_poly_eq1 size_polyC oner_neq0.
-have [/eqP ev_v_eq0 | ev_V_neq0] := eqVneq (ev v) 0.
-  right ; rewrite Hx ; apply/irreducible_has_pole => //.
-  by rewrite mulf_eq0 invr_eq0 !tofrac_eq0 negb_or ; apply/andP.
-by left ; exists (u, v) => //= ; apply/andP.
+apply: (iffP idP)=> [fx_eq0 y1 y2 x_def|]; last first.
+  by move=> Pf; apply/feval_neq0P => [[y /=]] /Pf; rewrite -negb_or => ->.
+apply: contraTT fx_eq0; rewrite negb_or => fy1V20.
+by apply/feval_neq0P; exists (y1, y2).
 Qed.
 
-Fact aux_evrepr : forall (x : {fracpoly K}),
-  {y : {poly K} * {poly K} | x = y.1%:F / y.2%:F & (ev y.2 != 0)} 
-  + has_pole ev x.
+Lemma fpoleM x y : feval y != 0 -> fpole (x * y) = fpole x.
 Proof.
-move => x.
-move : (evrepr x) => [[y Hx] /andP [ev_y2_neq0 _]| x_has_pole].
-+ by left ; exists y.
-+ by right.
+move=> /feval_neq0P=> [[{y} y -> /andP [fy1 fy2]]].
+have [|{x} x1 x2 fx2] := fevalP x; last first.
+  by rewrite mulf_div -!rmorphM /= fpole_fracF // rmorphM mulf_neq0.
+apply: contraTT => /fpolePn [z] /(canRL (mulfK _)) ->; last first.
+  by rewrite frac_neq0 ?felem_eq0F // => /(_ isT).
+move=> fz2; rewrite invf_div mulf_div -!rmorphM /=.
+by rewrite fpole_fracF // rmorphM mulf_neq0.
 Qed.
 
-Definition fracpoly_ev := f_eval aux_evrepr.
+Lemma feval_pole x : fpole x -> feval x = 0.
+Proof. by case: fevalP. Qed.
 
-Lemma fracpoly_ev_div (u v : {fracpoly K}) : 
-  fracpoly_ev v != 0 ->fracpoly_ev (u / v) = (fracpoly_ev u) / (fracpoly_ev v).
-Proof. by move => H ; rewrite /fracpoly_ev f_eval_div. Qed.
-
-Lemma fracpoly_ev_frac (u : {poly K}) : fracpoly_ev u%:F = ev u.  
-Proof. by rewrite /fracpoly_ev f_eval_frac. Qed.
-
-Lemma fracpoly_ev0 : fracpoly_ev 0 = 0.
-Proof. by rewrite /fracpoly_ev f_eval0. Qed.
-
-Lemma irreducible_root (u v : {poly K}) : v != 0 -> coprimep u v ->
-  reflect (has_root ev (u %:F / v %:F)) (ev u == 0).
+Lemma feval_root  x : froot x -> feval x = 0.
 Proof.
-move => v_neq0 coprime_u_v.
-apply/(equivP eqP) ; split ; last first.
-+ move => [eq_0 | H_root].
-- move: eq_0 ; rewrite mulf_eq0 invr_eq0 !tofrac_eq0.
-  move/negbTE : v_neq0 ->.
-  rewrite orbF ; move/eqP ->.
-  exact: rmorph0.
-- exact: (H_root (_, _)).
-+ move => ev_u_eq0.
-  have [x_eq0 | x_neq0] := eqVneq (u%:F / v%:F) 0.
-- by left ; apply/eqP.
-- right => [[y1 y2] /= H].
-  have y2_neq0: y2 != 0.
--- apply/negP => /eqP y2_eq0.
-   move: H ; rewrite y2_eq0 rmorph0 invr0 mulr0.
-   by move/eqP ; move/negbTE : x_neq0  ->. 
--- have: u %| y1.
-     rewrite -(Gauss_dvdpr _ coprime_u_v).
-     move/eqP: H ; rewrite eq_divf ?tofrac_eq0 // -!rmorphM tofrac_eq.
-     move/eqP ; rewrite [RHS]mulrC => <-.
-     exact: dvdp_mulIl.
-  rewrite horner_evalE dvdp_eq => /eqP ->.
-  by rewrite hornerM -!horner_evalE ev_u_eq0 mulr0.
-Qed. 
-
-Lemma evrepr2 : forall (x : {fracpoly K}),
-  {y : {poly K} * {poly K} | x = y.1%:F / y.2%:F & 
-      (ev y.1 != 0) && (ev y.2 != 0) && (coprimep y.1 y.2)} 
-  + has_pole ev x
-  + has_root ev x.
-Proof.
-move => x.
-move: (evrepr x) => [[[x1 x2] /= Hx] 
-             /andP [ev_x2_neq0 H_coprime] | has_pole_x] ; last by left ; right.
-have [ev_y2_eq0 | ev_y2_neq0] := eqVneq (horner_eval a x1) 0.
-+ right ; rewrite Hx.
-  apply/irreducible_root => // ; last by apply/eqP.
-  apply/negP => /eqP x2_eq0.
-  by move: ev_x2_neq0 ; rewrite x2_eq0 horner_evalE hornerC eqxx.
-+ left ; left ; exists (x1, x2) => //.
-  by rewrite ev_x2_neq0 ev_y2_neq0 H_coprime.
-Qed. 
-
-Lemma evrepr3 : forall (x : {fracpoly K}),
-  {y : {poly K} * {poly K} | x = y.1%:F / y.2%:F & 
-      (ev y.1 != 0) && (ev y.2 != 0) && (coprimep y.1 y.2)} 
-  + has_pole ev x
-  + has_non_trivial_root ev x
-  + {x == 0}.
-Proof.
-move => x.
-move: (evrepr2 x) => [[[[x1 x2] /= Hx] H | has_pole_x] | has_root_x].  
-+ by left ; left ; left ; exists (x1, x2). 
-+ by left ; left ; right.
-+ have [x_eq0 | x_neq0] := boolP (x == 0).
-- by right.
-- left ; right ; case: has_root_x => //.
-  by move/negbTE : x_neq0  ->.
-Qed. 
-
-Lemma fracpoly_ev_eq0 (x : {fracpoly K}) : 
-                          reflect (has_general_root ev x) (fracpoly_ev x == 0).
-Proof.
-apply/(equivP eqP) ; split.
-+ move: (evrepr3 x) => 
-  [[[[[x1 x2] /= Hx] /andP [/andP [ev_x1_neq0 ev_x2_neq0] coprime_x1_x2] 
-  | has_pole_x] | root_x] | x_eq0] ; last 3 first.
-- by move => _ ; right.
-- by move => _ ; left ; right.
-- by move => _ ; left ; left.
-  rewrite Hx fracpoly_ev_div ; last by rewrite fracpoly_ev_frac. 
-  move/eqP ; rewrite mulf_eq0 invr_eq0 !fracpoly_ev_frac.
-  by move/negbTE : ev_x1_neq0 -> ; move/negbTE : ev_x2_neq0 ->.
-+ move => [x_has_root | x_has_pole].
-- by apply: f_eval_root.
-- by apply: f_eval_pole.
+case: fevalP => // y1 y2 fy2.
+have [-> _|y1_neq0] := eqVneq y1 0; first by rewrite rmorph0 mul0r.
+by rewrite froot_frac => // /eqP ->; rewrite mul0r.
 Qed.
 
-Lemma fracpoly_ev_div_coprimep (p q : {poly K}) : coprimep p q ->
-           fracpoly_ev (p%:F / q%:F) = (fracpoly_ev p%:F) / (fracpoly_ev q%:F).
+Lemma feval_tofrac (x : R) : feval (x %:F) = f x.
+Proof. by rewrite -[x%:F]divr1 feval_frac ?rmorph1 ?divr1 ?oner_eq0. Qed.
+
+Lemma feval0 : feval 0 = 0. Proof. by rewrite feval_tofrac rmorph0. Qed.
+Lemma feval1 : feval 1 = 1. Proof. by rewrite feval_tofrac rmorph1. Qed.
+
+Lemma fevalN : {morph feval : x / - x}.
 Proof.
-move => coprime_p_q.
-set x:= p%:F / q%:F.
-have [/eqP x_eq0 | x_neq0] := boolP (x == 0).
-+ rewrite x_eq0 ; move/eqP: x_eq0.
-  rewrite mulf_eq0 invr_eq0 => /orP [/eqP -> | /eqP ->].
-- by rewrite fracpoly_ev0 mul0r.
-- by rewrite !fracpoly_ev0 invr0 mulr0.
-+ have [/eqP ev_q_eq0 | ev_q_neq0] := boolP (ev q == 0) ; last first.
-    by rewrite fracpoly_ev_div fracpoly_ev_frac.
-  rewrite !fracpoly_ev_frac ev_q_eq0 invr0 mulr0.
-  move/eqP/(irreducible_has_pole x_neq0 coprime_p_q): ev_q_eq0.
-  exact: f_eval_pole.
+move=> x; have [] := fevalP x; first by rewrite -fpoleN oppr0 => /feval_pole->.
+by move=> y1 y2 fy2; rewrite -!mulNr -!rmorphN /= feval_frac.
 Qed.
 
-Definition Xinv := 1/(('X : {poly K}) %:F).
-
-Lemma Xinv_eq0 : (Xinv == 0) = false.
-Proof. rewrite /Xinv mul1r invr_eq0 tofrac_eq0 ; exact: polyX_eq0. Qed.
-
-Lemma pole_Xinv : reflect (has_pole ev Xinv) (a == 0).
+Fact feval_divN0 y z : feval z != 0 -> feval (y / z) = (feval y) / (feval z).
 Proof.
-apply/(equivP eqP) ; split.
-+ move => a_eq0 ; apply/irreducible_has_pole.
-- by rewrite mulf_eq0 negb_or invr_eq0 !tofrac_eq0 oner_eq0 polyX_eq0.
-- exact: coprime1p.
-  by apply/eqP ; rewrite evX.
-+ move/irreducible_has_pole ; rewrite mulf_neq0 ; last 2 first.
-- by rewrite tofrac_eq0 oner_neq0.
-- by rewrite invr_eq0 tofrac_eq0 polyX_eq0.
-  rewrite coprime1p evX => H.
-  by apply/eqP ; apply: H.
+case: fevalP; first by rewrite eqxx.
+move=> {z} z1 z2 fz2; rewrite mulf_eq0 negb_or invr_eq0 fz2 andbT => fz1.
+case: (fevalP y)=> [y_pole|{y} y1 y2 fy2]; rewrite ?mul0r /=; last first.
+  rewrite !invfM !invrK ![_^-1 * _]mulrC !mulf_div -?rmorphM /=.
+  by rewrite feval_frac //  rmorphM mulf_neq0.
+by rewrite feval_pole // fpoleM // invf_div feval_frac ?mulf_neq0 ?invr_eq0.
 Qed.
 
-Lemma fracpoly_evC (c : K) : fracpoly_ev (c %:FP) = c.
-Proof. by rewrite /fracpoly_ev f_eval_frac evC. Qed.
-
-End EvalRatFrac.
-End EvalRatFrac.
-
-Local Notation "x %:FP" := (EvalRatFrac.to_fracpoly x).
-Local Notation "p ^ f" := (map_poly f p).
-Local Notation "p ^:FP" := (p ^ (@EvalRatFrac.to_fracpoly _)). 
-
-Module MapRatFrac.
-Section MapRatFrac.
-Import EvalFrac.
-Import EvalRatFrac.
-
-Variable (K : fieldType).
-
-Let ev := [rmorphism of tofrac \o @map_poly _ _ (@to_fracpoly K)].
-
-Lemma evX : ev 'X = 'X %:F.
-Proof. by rewrite /ev /= map_polyX. Qed.
-
-Lemma ev_inj : injective ev.
-Proof. 
-apply: inj_comp ; first exact: tofrac_inj.
-exact: map_poly_inj.
+Lemma frootM x y : feval y != 0 -> froot (x * y) = froot x.
+Proof.
+move=> fy_neq0; rewrite /froot invfM fpoleM //.
+by rewrite -div1r feval_divN0 ?feval1 ?div1r ?invr_eq0.
 Qed.
 
-(*
-Definition no_pole := (has_no_pole ev_inj).
-Hint Resolve no_pole.
-*)
+Lemma feval_eq0 x : (feval x == 0) = [|| x == 0, froot x | fpole x].
+Proof.
+rewrite /froot; have [->|] /= := altP (x =P 0); first by rewrite feval0 eqxx.
+case: fevalP => [|y1 y2 fy2]; rewrite ?eqxx ?(orbT,orbF) ?invf_div //.
+rewrite ?frac_eq0 !mulf_eq0 negb_or invr_eq0 (negPf fy2) orbF.
+by move => /andP [y10 y20]; rewrite fpole_frac.
+Qed.
 
-Let ev_repr := (fun x => @inl _ (has_pole ev x) (frepr ev_inj x)).
+Lemma fevalV : {morph feval : x / x^-1}.
+Proof.
+move=> x; have [fx_eq0|fx_neq0] := eqVneq (feval x) 0.
+  apply/eqP; rewrite fx_eq0 invr0 feval_eq0.
+  by rewrite invr_eq0 frootV orbA orbAC -orbA -feval_eq0 fx_eq0.
+by rewrite -div1r feval_divN0 // feval1 div1r.
+Qed.
 
-Definition lift_fracpoly := f_eval_rmorphism ev_repr ev_inj.
+Lemma feval_N0div y z  : feval y != 0 -> feval (y / z) = (feval y) / (feval z).
+Proof. by move=> ?;rewrite -invf_div -feval_divN0 // -fevalV invf_div. Qed.
 
-Canonical lift_fracpoly_rmorphism := f_eval_rmorphism ev_repr ev_inj.
+Lemma fevalD : {in predC fpole &, {morph feval : x y / x + y}}.
+Proof.
+move=> x y; rewrite !inE.
+have [[] // x1 x2 fx2 [] // y1 y2 fy2 _ _] := (fevalP x, fevalP y).
+rewrite !addr_div ?unitfE ?rmorph_eq0 ?felem_eq0F -?rmorphM -?rmorphD //=.
+by rewrite feval_frac // rmorphM mulf_neq0.
+Qed.
 
-Lemma lift_fracpoly_tofrac (p : {poly K}) : 
-  lift_fracpoly (p %:F) = (p ^:FP) %:F.
-Proof. rewrite /lift_fracpoly ; exact: (f_eval_frac _). Qed.
+Lemma fevalB : {in predC fpole &, {morph feval : x y / x - y}}.
+Proof. by move=> x y /= ? ?; rewrite fevalD ?fevalN // inE fpoleN. Qed.
 
-Lemma tofrac_scale (c : K) (p : {poly K}) : (c *: p)%:F = (c%:P)%:F * (p %:F).
+Lemma fevalM : {in predC fpole &, {morph feval : x y / x * y}}.
+Proof.
+move=> x y; rewrite !inE.
+have [[] // x1 x2 fx2 [] // y1 y2 fy2 _ _] := (fevalP x, fevalP y).
+by rewrite !mulf_div -!rmorphM /= feval_frac // rmorphM mulf_neq0.
+Qed.
+
+Lemma feval_div : {in predC fpole & predC froot, {morph feval : x y / x / y}}.
+Proof. by move=> x y /= ? ?; rewrite fevalM ?fevalV // inE fpoleV. Qed.
+
+End EvalFrac.
+
+Notation "f .-pole" := (@fpole_of _ _ _ (Phantom (_ -> _) f))
+  (at level 2, format "f .-pole") : ring_scope.
+Notation "f .-root" := (@froot_of _ _ _ (Phantom (_ -> _) f))
+  (at level 2, format "f .-root") : ring_scope.
+Notation "f .-eval" := (@feval_of _ _ _ (Phantom (_ -> _) f))
+  (at level 2, format "f .-eval") : ring_scope.
+
+Section EvalFracInj.
+
+Variable (R : idomainType) (K : fieldType) (f : {injmorphism R -> K}).
+
+Lemma inj_fpole (x : {fraction R}) : f.-pole x = false.
+Proof.
+by apply/fpolePn; have [y] := fracE x; exists y; rewrite ?rmorph_eq0.
+Qed.
+
+Lemma injNfpole (x : {fraction R}) : ~~ f.-pole x.
+Proof. by rewrite inj_fpole. Qed.
+Hint Resolve injNfpole.
+
+Lemma feval_rmorphism : rmorphism f.-eval.
+Proof.
+split; first by move=> x y; rewrite fevalD ?inE // -fevalN.
+by split; [move=> x y; rewrite fevalM ?inE|rewrite feval1].
+Qed.
+
+Canonical feval_is_additive := Additive feval_rmorphism.
+Canonical feval_is_rmorphism := AddRMorphism feval_rmorphism.
+
+Lemma feval_inj : injective f.-eval.
+Proof.
+apply: raddf_inj => x /= /eqP; rewrite feval_eq0 /=.
+by rewrite inj_fpole [f.-root _]inj_fpole ?orbF => /eqP.
+Qed.
+
+Canonical feval_is_injmorphism := InjMorphism feval_inj.
+
+End EvalFracInj.
+
+Section MapFrac.
+
+Variable (R S : idomainType) (iota : {injmorphism R -> S}).
+Let tofrac_map := [injmorphism of tofrac \o iota].
+Definition map_frac_of (phiota : phantom (R -> S) iota) := tofrac_map.-eval.
+Local Notation map_frac := (map_frac_of (Phantom (_ -> _) iota)).
+
+Canonical map_frac_is_additive := [additive of map_frac].
+Canonical map_frac_is_rmorphism := [rmorphism of map_frac].
+Canonical map_frac_is_injmorphism := [injmorphism of map_frac].
+
+Lemma map_fracE (x : R) : map_frac (x%:F) = (iota x)%:F.
+Proof. by rewrite [LHS]feval_tofrac. Qed.
+
+Lemma map_frac_frac (x y : R) : map_frac (x // y) = (iota x) // (iota y).
+Proof. by rewrite fmorph_div /= !map_fracE. Qed.
+
+Lemma map_frac_tofracV (x : R) : map_frac (x%:F^-1) = (iota x)%:F^-1.
+Proof. by rewrite !fmorphV /= map_fracE. Qed.
+
+End MapFrac.
+
+Notation map_frac iota := (map_frac_of (Phantom (_ -> _) iota)).
+Local Notation "p ^^ f" := (map_frac f p)
+   (f at next level, at level 30).
+Local Notation "p ^^^ f" := (map_frac (map_poly f) p)
+   (f at next level, at level 30).
+
+Section EvalFracPoly.
+
+Variable (K : fieldType) (a: K).
+
+Implicit Types (f g : {fracpoly K}).
+Implicit Types (u v p q : {poly K}).
+
+Lemma tofrac_scale (c : K) (p : {poly K}) : (c *: p)%:F = (c%:FP) * (p %:F).
 Proof. by rewrite -mul_polyC rmorphM. Qed.
 
-Lemma lift_fracpoly_scale (c : K) (p : {poly K}) : 
-lift_fracpoly (c *: p)%:F = 
-  (lift_fracpoly (c%:P)%:F) * (lift_fracpoly (p %:F)).
-Proof. 
-by move/(congr1 lift_fracpoly): (tofrac_scale c p) ; rewrite rmorphM. 
-Qed.
-
-Lemma mul_fracpolyC (c : K) (p : {poly K}): (c *: p)%:F = ((c %:FP) * (p %:F)).
-Proof. by rewrite -mul_polyC rmorphM. Qed.
-
-Lemma lift_fracpoly_div (p q : {fracpoly K}) : lift_fracpoly (p / q) = 
-(lift_fracpoly p) / (lift_fracpoly q).
+Lemma fracpolyE x :  {y : {poly K} * {poly K}
+  | x = y.1 // y.2 & (y.2 != 0) && (coprimep y.1 y.2)}.
 Proof.
-have [q_eq0 | q_neq0] := eqVneq q 0.
-  by rewrite q_eq0 rmorph0 !invr0 !mulr0 rmorph0. 
-by apply: rmorph_div ; rewrite unitfE.
+have [[u v] /= -> v_neq0] := fracE x.
+pose u' := u %/ gcdp u v; pose v' := v %/ gcdp u v.
+have v'_neq0 : v' != 0 by rewrite dvdp_div_eq0 // dvdp_gcdr.
+suff -> : u // v = u' // v'.
+  by exists (u',v'); rewrite // v'_neq0 coprimep_div_gcd // v_neq0 orbT.
+apply/eqP; rewrite eq_divf ?rmorph_eq0 // -!rmorphM rmorph_eq; apply/eqP.
+by rewrite divp_mulA ?dvdp_gcdr // divp_mulAC ?dvdp_gcdl.
 Qed.
 
-Lemma lift_fracpoly_X : lift_fracpoly ('X %:F) = 'X %:F.
-Proof. by rewrite lift_fracpoly_tofrac map_polyX. Qed.
-
-Lemma lift_fracpolyC (c : K) : lift_fracpoly (c %:FP) = (c %:FP) %:FP.
-Proof. by rewrite lift_fracpoly_tofrac map_polyC. Qed.
-
-Lemma lift_fracpoly_Xinv : 
-                     lift_fracpoly (Xinv K) = Xinv [fieldType of {fracpoly K}].
+Lemma fracpoly_eval_regmorphism : regular_dec (horner_eval a).
 Proof.
-rewrite /Xinv -(rmorph1 [rmorphism of tofrac]) /=.
-rewrite f_eval_div_frac ; last by rewrite evX tofrac_eq0 polyX_eq0.
-by rewrite rmorph1 evX.
+move=> x; have [[u v] /= -> /andP[v_neq0 cuv]] := fracpolyE x.
+have [->|u_neq0] := eqVneq u 0.
+  by left; exists (0, 1); rewrite /= ?mul0r ?rmorph1 ?oner_eq0.
+have [fv_eq0|?] := boolP (horner_eval a v == 0); last by left; exists (u, v).
+right=> u' v' /eq_divf_mul; rewrite frac_neq0 -?rmorphM //= => /(_ isT).
+move=> /tofrac_inj /(congr1 (horner_eval a)) /eqP.
+rewrite !rmorphM /= (eqP fv_eq0) mulr0 mulf_eq0.
+rewrite [_ == _]negbTE /=; first by move/eqP.
+by apply: coprimep_root fv_eq0; rewrite coprimep_sym.
 Qed.
 
-End MapRatFrac.
-End MapRatFrac.
+Canonical fracpoly_eval_is_regmorphism :=
+  RegMorphism fracpoly_eval_regmorphism.
 
-(* Hint Resolve MapRatFrac.no_pole. *)
+Notation fppole := ((horner_eval a).-pole).
+Notation fproot := ((horner_eval a).-root).
+Notation fpeval := ((horner_eval a).-eval).
 
-Module CompFrac.
+Lemma coprimep_fpole u v : u != 0 -> v != 0 -> coprimep u v ->
+  (fppole (u // v)) = (v.[a] == 0).
+Proof.
+move=> u0 v0 cuv; have [va0|?] := altP eqP; last by rewrite fpole_fracF.
+rewrite fpole_frac //= /horner_eval ?va0 ?eqxx //.
+by move/eqP: va0; apply: coprimep_root; rewrite coprimep_sym.
+Qed.
+
+Lemma coprimep_froot u v : u != 0 -> v != 0 -> coprimep u v ->
+  (fproot (u // v)) = (u.[a] == 0).
+Proof. by rewrite froot_div coprimep_sym => u0 v0; exact: coprimep_fpole. Qed.
+
+Lemma coprimep_feval u v : coprimep u v ->
+  (fpeval (u // v)) = (u.[a] / v.[a]).
+Proof.
+have [->|u_neq0] := eqVneq u 0; first by rewrite horner0 !mul0r feval0.
+have [->|v_neq0] := eqVneq v 0; first by rewrite horner0 !invr0 !mulr0 feval0.
+move=> cuv; have [va0|?] := eqVneq v.[a] 0; last by rewrite feval_frac.
+by rewrite feval_pole ?coprimep_fpole ?va0 ?invr0 ?mulr0.
+Qed.
+
+Lemma fpeval_tofrac u : fpeval u%:F = u.[a].
+Proof. by rewrite -[_%:F]divr1 coprimep_feval ?coprimep1 ?hornerC ?divr1. Qed.
+
+Lemma fppoleM f g : fppole f -> fppole g -> fppole (f * g).
+Proof.
+have [[f1 f2] /= -> /andP[f2_neq0 cf]] := fracpolyE f.
+have [[g1 g2] /= -> /andP[g2_neq0 cg]] := fracpolyE g.
+have [->|f1_neq0] := eqVneq f1 0; first by rewrite !mul0r fpole0.
+have [->|g1_neq0] := eqVneq g1 0; first by rewrite !mul0r mulr0 fpole0.
+rewrite !coprimep_fpole // mulf_div -!rmorphM /= => f2a_eq0 g2a_eq0.
+rewrite fpole_frac ?rmorphM //= ?mulf_eq0 ?negb_or ?f2a_eq0 ?f2_neq0 //.
+apply/andP; split; [move: f2a_eq0|move: g2a_eq0];
+by apply: coprimep_root; rewrite coprimep_sym.
+Qed.
+
+Lemma fppoleMF (f g : {fracpoly K}) :
+  ~~ fppole f -> ~~ fppole g -> fppole (f * g) = false.
+Proof.
+have [[f1 f2] /= -> /andP[f2_neq0 cf]] := fracpolyE f.
+have [[g1 g2] /= -> /andP[g2_neq0 cg]] := fracpolyE g.
+have [->|f1_neq0] := eqVneq f1 0; first by rewrite !mul0r fpole0.
+have [->|g1_neq0] := eqVneq g1 0; first by rewrite !mul0r mulr0 fpole0.
+rewrite !coprimep_fpole // mulf_div -!rmorphM /= => f2a_eq0 g2a_eq0.
+by rewrite fpole_fracF //= rmorphM mulf_eq0 negb_or f2a_eq0.
+Qed.
+
+Lemma fppoleX f n : n > 0 -> fppole (f ^+ n) = fppole f.
+Proof.
+case: n => // n _; elim: n => [|n IHn] //=; rewrite exprS.
+have [polef|Npolef] := boolP (fppole f).
+  by rewrite fppoleM ?IHn.
+by rewrite fppoleMF ?IHn.
+Qed.
+
+Lemma fpevalX n : n > 0 -> {morph fpeval : f / f ^+ n}.
+Proof.
+case: n => // n _; elim: n => [|n IHn] //= f.
+have [polef|Npolef] := boolP (fppole f).
+  by rewrite !feval_pole ?expr0n ?fppoleX //=.
+by rewrite exprS [RHS]exprS fevalM ?inE ?fppoleX //= IHn.
+Qed.
+
+Lemma XV_eq0 : ('X^-1 == 0 :> {fracpoly K}) = false.
+Proof. by rewrite invr_eq0 rmorph_eq0 polyX_eq0. Qed.
+
+Lemma fppole_XV : (fppole 'X^-1) = (a == 0).
+Proof. by rewrite fpoleV froot_tofrac ?polyX_eq0 //= /horner_eval hornerX. Qed.
+
+Lemma fpevalC (c : K) : fpeval (c %:FP) = c.
+Proof. by rewrite feval_tofrac [LHS]hornerC. Qed.
+
+End EvalFracPoly.
+
+Notation "a .-fppole" := ((horner_eval a).-pole)
+  (at level 2, format "a .-fppole") : ring_scope.
+Notation "a .-fproot" := ((horner_eval a).-root)
+  (at level 2, format "a .-fproot") : ring_scope.
+Notation "a .-fpeval" := ((horner_eval a).-eval)
+  (at level 2, format "a .-fpeval") : ring_scope.
+Notation "f .<[ a ]>" := (a.-fpeval f)
+  (at level 2, left associativity, format "f .<[ a ]>")  : ring_scope.
+
+Section MapPolyFrac.
+
+Variable (K L : fieldType) (iota : {injmorphism K -> L}).
+
+Lemma map_fracpolyX : 'XF ^^^ iota = 'XF.
+Proof. by rewrite map_fracE /= map_polyX. Qed.
+
+Lemma map_fracpolyC (c : K) : (c %:FP) ^^^ iota = (iota c) %:FP.
+Proof. by rewrite map_fracE /= map_polyC. Qed.
+
+Lemma map_fracpolyXV : 'X^-1 ^^^ iota = 'X^-1.
+Proof. by rewrite map_frac_tofracV /= map_polyX. Qed.
+
+Lemma map_fracpolyXn n : 'X^+n ^^^ iota = 'X^+n.
+Proof. by rewrite rmorphX /= map_fracpolyX. Qed.
+
+Lemma map_fracpolyXVn n : 'X^-n ^^^ iota = 'X^-n.
+Proof. by rewrite -!exprVn rmorphX fmorphV /= map_fracpolyX. Qed.
+
+End MapPolyFrac.
+
+Section FPEvalMap.
+
+Variables (K1 K2 : fieldType) (iota : {injmorphism K1 -> K2}) (a : K1).
+
+Lemma fppole_map (f : {fracpoly K1}) :
+  (iota a).-fppole (f ^^^ iota) = a.-fppole f.
+Proof.
+have [[p q] -> {f} /=  /andP [q_neq0 cpq]] := fracpolyE f.
+have [->|p_neq0] := eqVneq p 0; first by rewrite mul0r !rmorph0 !fpole0.
+rewrite fmorph_div /= !map_fracE !coprimep_fpole ?rmorph_eq0 ?coprimep_map //.
+by rewrite horner_map rmorph_eq0.
+Qed.
+
+Lemma fpeval_map (f : {fracpoly K1}) : (f ^^^ iota).<[iota a]> = iota f.<[a]>.
+Proof.
+have [[p q] -> {f} /=  /andP [q_neq0 cpq]] := fracpolyE f.
+rewrite fmorph_div /= !map_fracE !coprimep_feval ?coprimep_map //.
+by rewrite !horner_map fmorph_div.
+Qed.
+
+End FPEvalMap.
+
 Section CompFrac.
-Import EvalFrac.
-Import EvalRatFrac.
-Import MapRatFrac.
-
 Variable (K : fieldType).
+Implicit Types (f g h : {fracpoly K}).
+Implicit Types (p q r : {poly K}).
 
-Definition comp_fracpoly (r s : {fracpoly K}) := 
-  fracpoly_ev r (@lift_fracpoly _ s).
-Notation "p \FPo q" := (comp_fracpoly q p) 
-                                (at level 2, format "p  \FPo  q") : ring_scope. 
+Definition comp_fracpoly f g := (f ^^^ tofracpoly).<[g]>.
+Definition nocomp_fracpoly f g := g.-fppole (f ^^^ tofracpoly).
 
-Lemma comp_fracpoly0 p : 0 \FPo p = 0.
-Proof. by rewrite /comp_fracpoly /fracpoly_ev rmorph0 f_eval0. Qed.
+Lemma horner_map_polyC p q : (p ^ polyC).[q] = p \Po q.
+Proof. by []. Qed.
 
-Lemma comp_fracpolyD p q r :
-  ~ has_pole (ev r) (@lift_fracpoly _ p) -> 
-  ~ has_pole (ev r) (@lift_fracpoly _ q) ->
-  (p + q) \FPo r = (p \FPo r) + (q \FPo r).
+Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
+
+Lemma comp_poly_frac p f : p%:F \FPo f = (p ^ tofracpoly).[f].
+Proof. by rewrite /comp_fracpoly map_fracE /= feval_tofrac /=. Qed.
+
+Lemma comp_poly_fracE p f : p%:F \FPo f = \sum_(i < size p) (p`_i)%:FP * f ^+ i.
 Proof.
-move => pole_r_p pole_r_q.
-by rewrite /comp_fracpoly (rmorphD (@lift_fracpoly K)) [LHS]f_evalD. 
-(* rewrite (rmorphD (@lift_fracpoly _)). INFINITE COMPUTATION ? *)
+rewrite comp_poly_frac horner_coef size_map_poly /=.
+by apply: eq_bigr => i _; rewrite coef_map.
 Qed.
 
-Lemma comp_fracpolyN p r : ~ has_pole (ev r) (@lift_fracpoly _ p) -> 
-  (-p) \FPo r = -(p \FPo r).
+Lemma comp_fracpolyC (c : K) f : (c %:FP) \FPo f = c %:FP.
+Proof. by rewrite comp_poly_frac map_polyC hornerC. Qed.
+
+Lemma comp_fracpoly0 f : 0 \FPo f = 0.
+Proof. by rewrite comp_fracpolyC. Qed.
+
+Lemma comp_fracpoly_dflt f g : nocomp_fracpoly f g -> f \FPo g = 0.
+Proof. by move=> pole_fg; rewrite [LHS]feval_pole. Qed.
+
+Lemma comp_fracpolyD f g h :
+  ~~ nocomp_fracpoly f h -> ~~ nocomp_fracpoly g h ->
+  (f + g) \FPo h = (f \FPo h) + (g \FPo h).
+Proof. by move=> ??; rewrite /comp_fracpoly !rmorphD /= fevalD. Qed.
+
+Lemma comp_fracpolyN f g :  (- f) \FPo g = - (f \FPo g).
+Proof. by rewrite /comp_fracpoly !rmorphN /= fevalN. Qed.
+
+Lemma comp_fracpolyM f g h :
+  ~~ nocomp_fracpoly f h -> ~~ nocomp_fracpoly g h ->
+  (f * g) \FPo h = (f \FPo h) * (g \FPo h).
+Proof. by move=> ??; rewrite /comp_fracpoly !rmorphM /= fevalM. Qed.
+
+Lemma comp_fracpolyXr f : f \FPo ('X %:F) = f.
 Proof.
-move => pole_r_p.
-by rewrite /comp_fracpoly (rmorphN (@lift_fracpoly K)) [LHS]f_evalN.
+rewrite /comp_fracpoly; have [[p q] -> {f} /= /andP [p2_neq0 cp]] := fracpolyE f.
+rewrite !fmorph_div /= !map_fracE coprimep_feval ?coprimep_map //=.
+rewrite /tofracpoly !map_poly_comp !horner_map /= !horner_map_polyC.
+by rewrite !comp_polyXr.
 Qed.
 
-Lemma comp_fracpolyM p q r :
-  ~ has_pole (ev r) (@lift_fracpoly _ p) -> 
-  ~ has_pole (ev r) (@lift_fracpoly _ q) ->
-  (p * q) \FPo r = (p \FPo r) * (q \FPo r).
+Lemma comp_fracpoly_exp (m : nat) f  g : (f ^+ m) \FPo g = (f \FPo g) ^+ m.
 Proof.
-move=> pole_r_p pole_r_q.
-by rewrite /comp_fracpoly (rmorphM (@lift_fracpoly K)) [LHS]f_evalM.
+case: m => [|m]; first by rewrite !expr0 comp_fracpolyC.
+by rewrite /comp_fracpoly !rmorphX /= fpevalX.
 Qed.
 
-Lemma comp_fracpolyV p r :
-  ~ has_pole (ev r) (@lift_fracpoly _ p) -> 
-  (p ^-1) \FPo r = (p \FPo r) ^-1.
+Lemma comp_fracpolyV f g : (f ^-1) \FPo g = (f \FPo g) ^-1.
+Proof. by rewrite /comp_fracpoly !fmorphV /= fevalV. Qed.
+
+Lemma comp_fracpoly_div f g h : g \FPo h != 0 ->
+  (f / g) \FPo h = (f \FPo h) / (g \FPo h).
+Proof. by move=> ?; rewrite /comp_fracpoly !fmorph_div /= feval_divN0. Qed.
+
+(** begin hide *)
+(** Conjecture *)
+(* Lemma pole_comp_fracpolyPn f g : *)
+(*   reflect (exists2 c : K, c.-fppole f & g = c%:FP) (nocomp_fracpoly f g). *)
+(* Proof. *)
+(* rewrite /nocomp_fracpoly; apply: (iffP idP); last first. *)
+(*   by move=> [c ? ->]; rewrite fppole_map. *)
+(* have [[p q] -> {f} /= /andP [p2_neq0 cp]] := fracpolyE f. *)
+(* have [->|p_neq0] := eqVneq p 0; first by rewrite mul0r !rmorph0 fpole0. *)
+(* rewrite fmorph_div /= !map_fracE coprimep_fpole
+   ?rmorph_eq0 ?coprimep_map //=. *)
+(* Abort. *)
+(** end hide *)
+
+Lemma cst_nocomp_fracpoly f (c : K) : nocomp_fracpoly f (c%:FP) = c.-fppole f.
+Proof. by rewrite /nocomp_fracpoly fppole_map. Qed.
+
+Lemma Ncst_nocomp_fracpoly r f : size r > 1 -> ~~ nocomp_fracpoly f r%:F.
 Proof.
-move => pole_r_p.
-have [p_eq0 | p_neq0] := boolP (p == 0).
-  by move/eqP: p_eq0 -> ; rewrite invr0 comp_fracpoly0 invr0.
-rewrite /comp_fracpoly (rmorphV (@lift_fracpoly K)) ; last by rewrite unitfE.
-by rewrite [LHS]f_eval_inv.
+rewrite /nocomp_fracpoly => r_gt1.
+have [[p q] -> {f} /= /andP [p2_neq0 cp]] := fracpolyE f.
+have [->|p_neq0] := eqVneq p 0; first by rewrite mul0r !rmorph0 fpole0.
+rewrite !fmorph_div /= !map_fracE coprimep_fpole ?rmorph_eq0 ?coprimep_map //=.
+rewrite /tofracpoly map_poly_comp /= horner_map /= rmorph_eq0.
+rewrite horner_map_polyC -lead_coef_eq0 lead_coef_comp //.
+rewrite mulf_neq0 ?expf_eq0 ?lead_coef_eq0 ?negb_and //.
+by rewrite -size_poly_eq0 gtn_eqF ?orbT // (leq_trans _ r_gt1).
 Qed.
 
-Lemma comp_fracpoly_div p q r : 
-  f_eval (aux_evrepr r) ((lift_fracpoly K) q) != 0 ->
-  (p / q) \FPo r = (p \FPo r) / (q \FPo r).
+Lemma comp_fracpolyX f : ('X %:F) \FPo f = f.
+Proof. by rewrite comp_poly_frac map_polyX hornerX. Qed.
+
+Lemma comp_fracpolyXn (m : nat) f : 'X^+m \FPo f = f ^+ m.
+Proof. by rewrite comp_fracpoly_exp /= comp_fracpolyX. Qed.
+
+Lemma comp_fracpoly_XV f : 'X^-1 \FPo f = f ^-1.
+Proof. by rewrite comp_fracpolyV comp_fracpolyX. Qed.
+
+Lemma comp_fracpoly_XV_XV : 'X^-1 \FPo 'X^-1 = 'XF.
+Proof. by rewrite comp_fracpoly_XV invrK. Qed.
+
+Lemma comp_poly_XV p : p%:F \FPo 'X^-1 = \sum_(i < size p) ((p`_i)%:FP) * 'X^-i.
+Proof. by rewrite comp_poly_fracE; apply: eq_bigr => i _; rewrite exprVn. Qed.
+
+Lemma nocomp_polyF p f : nocomp_fracpoly p%:F f = false.
+Proof. by rewrite /nocomp_fracpoly map_fracE /= fpole_tofrac. Qed.
+
+Lemma comp_frac_frac p q f :  coprimep p q ->
+  (p // q \FPo f) = (p%:F \FPo f) / (q%:F \FPo f).
 Proof.
-move => eval_q_in_r_neq0.
-by rewrite /comp_fracpoly lift_fracpoly_div fracpoly_ev_div.
-Qed.
-
-Lemma NcstNpole (r : {poly K}) (p : {fracpoly K}) : 
-  (size r > 1) -> ~ has_pole (ev r %:F) (@lift_fracpoly _ p).
-Proof.
-move => Hsize H.
-have [[p1 p2]] := fracE p => /= Hp p2_neq0.
-move: Hp => /(congr1 (@lift_fracpoly _)).
-rewrite rmorphM rmorphV; last by rewrite unitfE tofrac_eq0.
-rewrite ![in RHS]lift_fracpoly_tofrac => H_lift_p.
-move: ((H (p1^:FP, p2^:FP)) H_lift_p) => /=.
-rewrite horner_evalE map_poly_comp_id0 // horner_map /= ; move/eqP.
-rewrite tofrac_eq0 -lead_coef_eq0 lead_coef_comp // mulf_eq0 lead_coef_eq0.
-move/negbTE : p2_neq0 => p2_neq0 ; rewrite p2_neq0 orFb ; apply/negP.
-by rewrite expf_neq0 // lead_coef_eq0 -size_poly_gt0 (ltn_trans _ Hsize).
-Qed.
-
-Lemma nice_compfracpolyD (p q : {fracpoly K}) (r : {poly K}) : 
-    (size r > 1) -> (p + q) \FPo (r %:F) = (p \FPo (r %:F)) + (q \FPo (r %:F)).
-Proof.
-move => size_r.
-by rewrite -f_evalD ?(NcstNpole size_r) -?rmorphD // ; apply: NcstNpole. 
-Qed.
-
-Lemma comp_fracpolyX (p : {fracpoly K}) : ('X %:F) \FPo p = p.
-Proof.
-rewrite /comp_fracpoly /fracpoly_ev /lift_fracpoly /=.
-by rewrite !(f_eval_frac _) /=  horner_evalE !map_polyX hornerX.
-Qed.
-
-Lemma comp_fracpolyC (c : K) (p : {fracpoly K}) : (c %:FP) \FPo p = c %:FP.
-Proof. by rewrite /comp_fracpoly lift_fracpolyC fracpoly_evC. Qed.
-
-Lemma comp_fracpolyXr (p : {fracpoly K}) : p \FPo ('X %:F) = p.
-Proof.
-have [[p1 p2]] := fracE p => /= Hp p2_neq0.
-rewrite Hp /comp_fracpoly /fracpoly_ev /lift_fracpoly /=.
-rewrite f_eval_div_frac /= ; last by rewrite tofrac_eq0 to_fracpoly_eq0.
-rewrite f_eval_div ; last first.
-  rewrite f_eval_frac /= horner_evalE map_poly_comp horner_map tofrac_eq0 /=.
-  by rewrite -/(@comp_poly _ _ _) (comp_polyXr _).
-rewrite !f_eval_frac /= !horner_evalE !map_poly_comp !horner_map /=.
-by rewrite -!/(_ \Po 'X) !(comp_polyXr _).
-(* by rewrite -![(_ ^ polyC).['X]]/(_ \Po 'X) !(comp_polyXr _). SUBSTITUTION *)
-Qed.
-
-Lemma comp_fracpolyXn (m : nat) (p : {fracpoly K}) : 
-  (('X ^+m) %:F) \FPo p = p ^+m. 
-Proof.
-rewrite /comp_fracpoly /fracpoly_ev /= /lift_fracpoly /=.
-rewrite !f_eval_frac /= horner_evalE !rmorphX /= horner_exp_comm !map_polyX.
-+ by rewrite hornerX.
-+ by rewrite /comm_poly mulrC.
-Qed.
-
-Lemma compXnXinv (m : nat) : (('X^m)%:F) \FPo (Xinv _) = (('X^m)%:F) ^-1.
-Proof. by rewrite comp_fracpolyXn tofracX /Xinv mul1r exprVn. Qed. 
-
-Lemma pole_Xinv0 : has_pole (ev 0) ((lift_fracpoly K) (Xinv K)).
-Proof. rewrite lift_fracpoly_Xinv /= ; exact: pole_Xinv. Qed. 
-
-Lemma comp_fracpoly_Xinv (p : {fracpoly K}) : (Xinv _) \FPo p = p ^-1.
-Proof.
-have [p_eq0 | p_neq0] := eqVneq p 0.
-  rewrite p_eq0 invr0 /comp_fracpoly /fracpoly_ev ; apply: f_eval_pole.
-  exact: pole_Xinv0.
-rewrite comp_fracpoly_div ; last first.
-  by rewrite -/(@fracpoly_ev _ _) -/(@comp_fracpoly _ _) comp_fracpolyX.
-by rewrite comp_fracpolyC rmorph1 mul1r comp_fracpolyX.
-Qed.
-
-Lemma comp_fracpoly_Xinv_Xinv : (Xinv _) \FPo (Xinv _) = 'X %:F.
-Proof. by rewrite comp_fracpoly_Xinv /Xinv mul1r invrK. Qed.
-
-Lemma comp_p_invX (p : {poly K}) : (p %:F) \FPo (Xinv _) = 
-  \sum_(0 <= i < size p) ((p`_i) %:FP) * ((Xinv _) ^+i).
-Proof.
-rewrite /comp_fracpoly lift_fracpoly_tofrac /fracpoly_ev f_eval_frac.
-rewrite /to_fracpoly /= horner_evalE horner_poly (big_mkord predT).
-by apply: eq_bigr. 
-Qed. 
-
-Lemma comp_fracpoly_eq0 (p q : {fracpoly K}) : 
-  has_pole (ev q) (@lift_fracpoly _ p) -> (p \FPo q = 0). 
-Proof. by apply: f_eval_pole. Qed.
-
-Lemma NpoleFP (p : {poly K}) (q : {fracpoly K}): 
-  ~ has_pole (ev q) (@lift_fracpoly _ p%:F).
-Proof. by rewrite lift_fracpoly_tofrac ; apply: Npole_tofrac. Qed.
-
-Lemma comp_fracpoly_frac_eq0 (p : {poly K}) (q : {fracpoly K}) :
-  ~(has_pole (ev q) (@lift_fracpoly _ p%:F)).
-Proof. exact: NpoleFP. Qed.
-
-Lemma comp_fracpoly_div_frac (p1 p2 : {poly K}) (q : {fracpoly K}) :
-  coprimep p1 p2 ->
-  ((p1%:F / p2%:F) \FPo q) = (p1%:F \FPo q) / (p2%:F \FPo q).
-Proof.
-move => coprime_p1_p2.
-rewrite /comp_fracpoly lift_fracpoly_div !lift_fracpoly_tofrac.
-by rewrite fracpoly_ev_div_coprimep // coprimep_map.
-Qed.
-
-Lemma inv_comp_fracpoly (p q : {fracpoly K}) : (p \FPo q) ^-1 = (p ^-1 \FPo q).
-Proof.
-have [-> | p_neq0] := eqVneq p 0.
-+ by rewrite invr0 comp_fracpoly0 invr0.
-+ rewrite /comp_fracpoly /fracpoly_ev rmorphV.
-- by rewrite f_eval_inv.
-- by rewrite unitfE.
+move=> cpq; rewrite /comp_fracpoly !fmorph_div /= !map_fracE /=.
+by rewrite coprimep_feval ?coprimep_map // !fpeval_tofrac.
 Qed.
 
 End CompFrac.
-End CompFrac.
-
