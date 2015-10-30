@@ -582,6 +582,9 @@ Proof. by rewrite -[x%:F]divr1 fpole_fracF // rmorph1 oner_eq0. Qed.
 Lemma fpole0 : fpole 0 = false.
 Proof. by rewrite fpole_tofrac. Qed.
 
+Lemma fpole1 : fpole 1 = false.
+Proof. by rewrite fpole_tofrac. Qed.             
+
 Fact felem_eq0F (x : R) : f x != 0 -> (x == 0) = false.
 Proof. by apply: contraNF => /eqP ->; rewrite rmorph0. Qed.
 
@@ -854,12 +857,18 @@ Notation fppole := ((horner_eval a).-pole).
 Notation fproot := ((horner_eval a).-root).
 Notation fpeval := ((horner_eval a).-eval).
 
-Lemma coprimep_fpole u v : u != 0 -> v != 0 -> coprimep u v ->
+Lemma coprimep_fpole u v : v != 0 -> coprimep u v ->
   (fppole (u // v)) = (v.[a] == 0).
 Proof.
-move=> u0 v0 cuv; have [va0|?] := altP eqP; last by rewrite fpole_fracF.
-rewrite fpole_frac //= /horner_eval ?va0 ?eqxx //.
-by move/eqP: va0; apply: coprimep_root; rewrite coprimep_sym.
+move=> vN0; have [u0|uN0 cuv] := eqVneq u 0.
++ rewrite u0 mul0r fpole0 coprime0p => eqp_v1.
+  symmetry; apply/negbTE; have: v %= 1 by [].
+  rewrite [v]size1_polyC; last first.
+    by have/eqP -> : size v == 1%N => //; rewrite size_poly_eq1.
+  by rewrite !hornerC polyC_eqp1.
++ have [va0|?] := altP eqP; last by rewrite fpole_fracF.
+  rewrite fpole_frac //= /horner_eval ?va0 ?eqxx //.
+  by move/eqP: va0; apply: coprimep_root; rewrite coprimep_sym.
 Qed.
 
 Lemma coprimep_froot u v : u != 0 -> v != 0 -> coprimep u v ->
