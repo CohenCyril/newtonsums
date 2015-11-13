@@ -428,7 +428,7 @@ rewrite ?coef0_is_0E ?coef0_is_1E.
 rewrite -!horner_coef0 -!horner_evalE rmorphB /= !horner_evalE hornerC.
 by move=> /eqP -> ; rewrite subrr.
 Qed.
-
+                                  
 Lemma c0_is_1_unit f : f \in coef0_is_1 -> f \is a GRing.unit.
 Proof. by rewrite coef0_is_1E unit_tfpsE => /eqP ->; rewrite oner_eq0. Qed.
 
@@ -467,6 +467,19 @@ Proof. by rewrite coef0_is_0E /exp => ->. Qed.
 
 Lemma exp_coef0_isnt_0 f : f \notin coef0_is_0 -> exp f = 0.
 Proof. by rewrite coef0_is_0E /exp => /negPf ->. Qed.
+
+Lemma exp0: exp 0 = 1.
+Proof.
+apply/val_inj/polyP=> j.
+rewrite exp_coef0_is_0 ?rpred0 //=.
+rewrite (eq_bigr (fun i => ((nat_of_ord i) == O)%:R))=> [|i]; last first.
+  by case: (_ i) => [|k]; rewrite expr0n ?eqxx ?fact0 ?invr1 ?scale1r ? scaler0.
+rewrite -(big_mkord predT (fun i => (i == _)%:R)) /=.
+rewrite big_ltn // eqxx big_nat /= big1 => [|i /andP [hi _]]; last first.
+  by rewrite eqn0Ngt hi.
+rewrite addr0 modp_small ?size_polyXn ?size_polyC //. 
+by apply: (leq_trans (leq_b1 _)).
+Qed.
 
 Lemma log_coef0_is_1 f : f \in coef0_is_1 ->
   log f = Tfpsp (- \sum_(1 <= i < n.+1) ((i %:R) ^-1) *: ((1 - (val f)) ^+i)).
@@ -1023,7 +1036,7 @@ have [->//|sfN0] := eqVneq (size (val f)) 0%N.
 by rewrite -ltnS prednK ?size_tfps // lt0n.
 Qed.
 
-Lemma deriv_tfpsE (m : nat) (f : {tfps K n}) : deriv_tfps f = Tfpsp n.-1 (val f)^`().
+Lemma deriv_tfpsE (f : {tfps K n}) : deriv_tfps f = Tfpsp n.-1 (val f)^`().
 Proof. by apply: val_inj; apply/polyP => i; rewrite coef_poly coef_modXn coef_deriv. Qed.
 
 End Truncated_Tfps.
@@ -1250,7 +1263,7 @@ Lemma coef0_prim_tfps (n : nat) (p : tfps K n) : (prim_tfps p)`_0 = 0.
 Proof. by apply/eqP; rewrite -coef0_is_0E coef0_prim_tfps_is_0. Qed.
 
 Variable (n : nat).
-
+Local Notation "c %:S" := (Tfpsp n (c %:P)) (at level 2).
 Local Notation "c %:S" := (Tfpsp n (c %:P)) (at level 2).
 Local Notation "c %:FPS" := (Tfpsp n.+1 (c %:P)) (at level 2).
 
@@ -1421,6 +1434,24 @@ rewrite expr2 tfps_trunc_mul ?leq_pred // invrM ?Tfpsp_is_unit ?nth_Tfpsp //.
 by rewrite mulrA divrr ?Tfpsp_is_unit ?nth_Tfpsp // mul1r.
 Qed.
 
+Locate "additive".
+
+Section Canonical_deriv_tfps.
+
+Variables (K :fieldType) (n : nat).
+
+Lemma deriv_tfps_is_additive : additive (@deriv_tfps K n).
+Proof. by move => f g; rewrite deriv_tfpsB. Qed.
+
+Canonical deriv_tfps_additive := Additive deriv_tfps_is_additive.
+
+Lemma deriv_tfps_is_linear : linear (@deriv_tfps K n).
+Proof. by move => c f g; rewrite deriv_tfpsD deriv_tfpsZ. Qed.
+
+Canonical deriv_tfps_linear := Additive deriv_tfps_is_linear.
+
+End Canonical_deriv_tfps.
+
 Section CompSeries.
 Variable (K : fieldType).
   
@@ -1526,3 +1557,23 @@ move: f g; case: m => [f g g0_eq0 | m f g g0_eq0].
 Qed.
 
 End CompSeries.
+
+
+Section RevSeries.
+
+Variable (K : fieldType) (n : nat).
+
+Fact rev_powerseries_proof (p : {tfps K n}) : size (revp p) <= n.+1.
+Proof. move: p => [ p pr ]; rewrite (leq_trans (revp_proof _)) //. Qed.
+
+Definition rev_tfps (m : nat) (p : {tfps K n}) := 
+  Tfpsp m (revp p). 
+
+Lemma rev_tfps_unit (m : nat) (p : {tfps K n}) : p != 0 -> 
+  (rev_tfps m p) \is a GRing.unit.
+Proof. 
+move: p => [ [s pr1] pr2 ] Hpneq0.
+by rewrite unit_tfpsE nth0_Tfpsp coef0_revp lead_coef_eq0 Hpneq0. 
+Qed.
+
+End RevSeries.

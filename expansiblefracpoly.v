@@ -217,4 +217,8 @@ Canonical devs_zmodPred := ZmodPred devs_subring_closed.
 Canonical devs_mulrPred := MulrPred devs_subring_closed.
 Canonical devs_subringPred := SubringPred devs_subring_closed.
 
+(* tests *)
+Fact devs0 : devs 0.
+Proof. by rewrite -unfold_in rpred0. Qed.
+
 End ExpansibleFracpoly.

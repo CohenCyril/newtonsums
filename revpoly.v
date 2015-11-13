@@ -13,7 +13,7 @@ From mathcomp
 Require Import ssrbool ssrfun eqtype ssrnat seq choice fintype finset finfun.
 From mathcomp
 Require Import  div tuple finfun bigop ssralg poly polydiv zmodp.
-From Newtonsums Require Import auxresults.
+From Newtonsums Require Import auxresults fraction.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -368,4 +368,24 @@ have [->|qN0] := eqVneq q 0; first by rewrite !(revp0, mulr0).
 by rewrite revpM_id0 // mulf_neq0 ?lead_coef_eq0.
 Qed.
 
+Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
+
+Lemma tofrac_revp (K : fieldType) (p : {poly K}) : 
+(revp p) %:F = (p %:F \FPo ('X%:F ^-1)) * ('X  %:F ^+(size p).-1).
+Proof.
+have [peq0 | pN0] := boolP (p == 0).
+move/eqP : peq0 => peq0 ; rewrite peq0 comp_fracpoly0 mul0r.
+  apply/eqP; rewrite raddf_eq0 ?revp_eq0 //.
+  exact: tofrac_inj.
+rewrite comp_poly_XV revp_sumE mulr_suml rmorph_sum /=; apply: eq_bigr => i _.
+rewrite tofrac_scale -mulrA; congr (_ * _); rewrite mulrC.
+rewrite -exprB; last 2 first.
++ by rewrite -ltnS prednK // size_poly_gt0.
++ rewrite unitfE raddf_eq0 ?polyX_eq0 //.
+  exact: tofrac_inj.
+by rewrite -subn1 -addn1 subnDA rmorphX subnAC.
+Qed.
+
 End MoreRevPoly.
+
+

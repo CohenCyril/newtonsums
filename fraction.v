@@ -416,7 +416,7 @@ Definition tofracpoly {K : fieldType} : K -> {fracpoly K} := tofrac \o polyC.
 
 Notation "x %:FP" := (tofracpoly x) : ring_scope.
 Local Notation "p ^ f" := (map_poly f p) : ring_scope.
-Local Notation "p ^:FP" := (p ^ (@tofracpoly _)) : ring_scope.
+Notation "p ^:FP" := (p ^ (@tofracpoly _)) : ring_scope.
 
 Notation "''XF'" := ('X%:F) : ring_scope.
 Notation "''X^+' n" := ('X%:F ^+ n)
@@ -431,6 +431,8 @@ Canonical tofracpoly_is_rmorphism (K : fieldType) :=
   [rmorphism of @tofracpoly K].
 Canonical tofracpoly_is_injmorphism (K : fieldType) :=
   [injmorphism of @tofracpoly K].
+
+Definition my_tofracpoly := tofracpoly_is_injmorphism.
 
 Module RegMorphism.
 
@@ -1101,6 +1103,22 @@ Proof. by rewrite comp_poly_fracE; apply: eq_bigr => i _; rewrite exprVn. Qed.
 Lemma nocomp_polyF p f : nocomp_fracpoly p%:F f = false.
 Proof. by rewrite /nocomp_fracpoly map_fracE /= fpole_tofrac. Qed.
 
+Lemma comp_frac_frac p q f : (q%:F \FPo f) != 0 -> 
+  (p // q \FPo f) = (p%:F \FPo f) / (q%:F \FPo f).
+Proof.
+rewrite /comp_fracpoly.
+move=> qf_neq0.
+
+rewrite fmorph_div /=.
+
+rewrite feval_frac.
+rewrite /comp_fracpoly.
+rewrite feval_frac.
+rewrite fmorph_div /=.
+Locate ".<[".
+rewrite fpeval_tofrac.
+Qed.
+
 Lemma comp_frac_frac p q f :  coprimep p q ->
   (p // q \FPo f) = (p%:F \FPo f) / (q%:F \FPo f).
 Proof.
@@ -1109,3 +1127,5 @@ by rewrite coprimep_feval ?coprimep_map // !fpeval_tofrac.
 Qed.
 
 End CompFrac.
+
+Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
