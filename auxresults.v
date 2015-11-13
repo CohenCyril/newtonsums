@@ -72,6 +72,27 @@ End MoreNatTheory.
 
 Section MoreBigop.
 
+Lemma big_morph_in (R1 R2 : Type)
+  (f : R2 -> R1) (id1 : R1) (op1 : R1 -> R1 -> R1)
+  (id2 : R2) (op2 : R2 -> R2 -> R2) (D : pred R2) :
+  (forall x y, x \in D -> y \in D -> op2 x y \in D) ->
+  id2 \in D ->
+  {in D &, {morph f : x y / op2 x y >-> op1 x y}} ->
+  f id2 = id1 ->
+  forall  (I : Type) (r : seq I) (P : pred I) (F : I -> R2),
+  all D [seq F x | x <- r & P x] ->
+  f (\big[op2/id2]_(i <- r | P i) F i) = \big[op1/id1]_(i <- r | P i) f (F i).
+Proof.
+move=> Dop2 Did2 f_morph f_id I r P F.
+elim: r => [|x r ihr /= DrP]; rewrite ?(big_nil, big_cons) //.
+set b2 := \big[_/_]_(_ <- _ | _) _; set b1 := \big[_/_]_(_ <- _ | _) _.
+have fb2 : f b2 = b1 by rewrite ihr; move: (P x) DrP => [/andP[]|].
+case: (boolP (P x)) DrP => //= Px /andP[Dx allD].
+rewrite f_morph ?fb2 // /b2 {b2 fb2 ihr b1 x Px Dx f_morph f_id}.
+elim: r allD => [|x r ihr /=]; rewrite ?(big_nil, big_cons) //.
+by case: (P x) => //= /andP [??]; rewrite Dop2 // ihr.
+Qed.
+
 Variables (R : Type) (idx : R).
 
 Fact big_ord_exchange_cond {op : Monoid.law idx} {a b : nat}
