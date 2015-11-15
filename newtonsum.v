@@ -945,13 +945,16 @@ Local Notation "p ^ f" := (map_tfps f p).
 Lemma iota_newton_tfps (p : {poly K}) (m : nat) :
   newton_tfps m p ^ iota = [tfps j => \sum_(r <- iroots p) r ^+ j].
 Proof.
-apply/eq_tfps => i /=; rewrite coef_modXn ltn_ord coef_tfps leq_ord.
-rewrite /newton_tfps map_Tfpsfp newton_roots.
-elim: iroots=> [|r s ihs]; first by rewrite !big_nil Tfpsfp0 coef0.
-rewrite !big_cons TfpsfpD /=; first last. 
-- by rewrite rpred_sum // => x _; rewrite -?topredE /= ?devs_inv1subCX.
-- by rewrite -?topredE /= ?devs_inv1subCX.
-by rewrite geometric_series coefD coef_tfps leq_ord ihs.
+rewrite mapf_Tfpsfp /= newton_roots.
+rewrite (big_morph_in (@devsD _) _ (@TfpsfpD _ _) (@Tfpsfp0 _ _)); last 2 first.
+- exact: rpred0.
+- apply/allP => x /=; move/mapP; rewrite filter_predT; move=> [y hy ->].
+  exact: devs_inv1subCX.
+apply/eq_tfps => i /=; rewrite coef_poly ltn_ord /=.
+rewrite (@big_morph _ _ (fun (x : {tfps L m}) => x`_i) 0 +%R); last 2 first.
+- by move => x y; apply: coefD.
+- exact: coef0.
+by apply: eq_bigr => x _; rewrite geometric_series /= coef_poly ltn_ord.
 Qed.
 
 Lemma map_poly_tfps m (s : {tfps K m}) :
@@ -1166,41 +1169,22 @@ Qed.
 
 Lemma nth_expX (K' : fieldType) (m i : nat) : 
   (expX K' m)`_i = if i < m.+1 then i`!%:R^-1 else 0.
-Proof.
-rewrite /expX.
-rewrite /exp.
-rewrite coef_Tfpsp.
-rewrite coefX.
-rewrite /=.
-rewrite eqxx /=.
-rewrite coef_modXn.
-congr if_expr.
 have [->|m_neq0] := eqVneq m O.
-rewrite expr1 modpp.
-rewrite big_ord_recl /=.
-rewrite big_ord0.
-rewrite addr0.
-rewrite expr0.
-rewrite fact0.
+  case:i => [|i]; last by rewrite tfps_nth_default.
+  by rewrite coef0_exp ?fact0 ?invr1 // coef0_is_0E coef_Tfpsp coefX.
+rewrite /expX /exp coef_Tfpsp coefX eqxx /= coef_modXn. 
 rewrite (eq_bigr (fun i => (nat_of_ord i)`!%:R^-1 *: 
                                              'X ^+ (nat_of_ord i))); last first.
-move => j _.
-congr (_ *: _).
-congr (_ ^+ _).
-rewrite modp_small // size_polyX size_polyXn //.
-rewrite coef_sum.
+  by move => j _; rewrite modp_small // size_polyX size_polyXn !ltnS lt0n.
+by rewrite -(@poly_def _ _ (fun i => i`!%:R^-1))  coef_poly; case: (_ < _).
+Qed.
 
-rewrite nth
-
-rewrite /expX /aux_exponential coefX [(0 == 1)%N]eq_sym eqn0Ngt lt0n /=.
-rewrite eqxx /= modp_small ; last first.
-  rewrite size_polyXn.
-  apply: (leq_trans (size_sum _ predT (fun i0 => 
-                              (nat_of_ord i0)`!%:R^-1 *: 'X^(nat_of_ord i0)))).
-  apply/bigmax_leqP => j _.
-  apply: (leq_trans (size_scale_leq _ _)).
-  by rewrite size_polyXn.
-by rewrite -(poly_def m.+1 (fun i0 => i0`!%:R^-1)) coef_poly.
+Lemma map_iota_expX (m : nat) : expX K m ^ iota = expX L m.
+Proof.
+rewrite /expX /exp !nth0_Tfpsp !coefX !eqxx -truncate_map_poly rmorph_sum . 
+congr Tfpsp; apply: eq_bigr => i _; rewrite linearZ /=; congr (_ *: _).
+  by rewrite rmorphV ?rmorph_nat // unitfE natmul_inj // -lt0n fact_gt0.
+by rewrite rmorphX /= map_modp map_polyX map_polyXn.
 Qed.
 
 Lemma map_iota_expX (m : nat) : expX K m ^ iota = expX L m.
