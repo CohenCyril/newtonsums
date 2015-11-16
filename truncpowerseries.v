@@ -155,6 +155,24 @@ Hint Resolve size_tfps.
 Lemma tfps_nth_default f j : j > n ->  f`_j = 0.
 Proof. by move=> j_big; rewrite nth_default // (leq_trans _ j_big). Qed.
 
+Lemma tfps_coefK f : [tfps s => f`_s] = f.
+Proof.
+apply/val_inj/polyP=> j; rewrite coef_poly ltnS.
+by have  [//|j_big] := leqP; rewrite tfps_nth_default.
+Qed.
+
+Lemma coef_tfps s (f : nat -> K) :
+  [tfps s => f s]`_s = if s <= n then f s else 0.
+Proof. by rewrite coef_poly. Qed.
+
+Lemma eq_tfps (s s' : {tfps}) :
+  (forall i : 'I_n.+1, s`_i = s'`_i) <-> (s = s').
+Proof.
+split=> [eq_s|-> //]; apply/val_inj/polyP => i /=.
+have [i_small|i_big] := ltnP i n.+1; first by rewrite (eq_s (Ordinal i_small)).
+by rewrite -[s]tfps_coefK -[s']tfps_coefK !coef_tfps leqNgt i_big.
+Qed.
+
 (* zmodType structure *)
 
 Fact zero_tfps_subproof : size (0 : {poly K}) <= n.+1.
@@ -263,16 +281,6 @@ by rewrite exprS /= ihm modp_mul -exprS.
 Qed.
 
 (* comUnitRingType structure *)
-
-Lemma tfps_coefK f : [tfps s => f`_s] = f.
-Proof.
-apply/val_inj/polyP=> j; rewrite coef_poly ltnS.
-by have  [//|j_big] := leqP; rewrite tfps_nth_default.
-Qed.
-
-Lemma coef_tfps s (f : nat -> K) :
-  [tfps s => f s]`_s = if s <= n then f s else 0.
-Proof. by rewrite coef_poly. Qed.
 
 Lemma coef_Tfpsp p s : (Tfpsp p)`_s = if s <= n then p`_s else 0.
 Proof. by rewrite coef_modXn. Qed.
@@ -823,7 +831,15 @@ Hint Resolve size_tfps.
 Definition forget_precision (K : fieldType) (m n : nat) (f : {tfps K m}) :=
                                         Tfpsp n f.
 
-Definition divX (K : fieldType) (m : nat) (f : {tfps K m}) := Tfpsp m (f %/ 'X).
+Definition divX (K : fieldType) (m : nat) (f : {tfps K m}) := Tfpsp m.-1 (f %/ 'X).
+
+Lemma divXE (K : fieldType) (m : nat) (f : {tfps K m}) : 
+  f`_0 == 0 -> divX f = [tfps i => f`_i.+1].
+Proof.
+move/eqP/polyXP; rewrite dvdp_eq /divX; move/eqP => h.
+rewrite [in RHS]h; apply/eq_tfps => i.
+by rewrite coef_poly coef_modXn coefMX.
+Qed.
 
 Section MapTfps.
 

@@ -432,7 +432,7 @@ Canonical tofracpoly_is_rmorphism (K : fieldType) :=
 Canonical tofracpoly_is_injmorphism (K : fieldType) :=
   [injmorphism of @tofracpoly K].
 
-Definition my_tofracpoly := tofracpoly_is_injmorphism.
+(* Definition my_tofracpoly := tofracpoly_is_injmorphism. *)
 
 Module RegMorphism.
 
