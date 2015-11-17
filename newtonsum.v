@@ -1,6 +1,7 @@
 (* (c) Copyright Microsoft Corporation and Inria. All rights reserved. *)
 
-(*****************************************************************************)(*  some doc here                                                            *)
+(*****************************************************************************)
+(*  some doc here                                                            *)
 (*****************************************************************************)
 
 Require Import mathcomp.ssreflect.ssreflect.
@@ -29,7 +30,7 @@ Open Local Scope quotient_scope.
 
 Section NewtonRepresentation.
 
-Variables (K L : fieldType) (* (n : nat) *) (iota : {injmorphism K -> L}).
+Variables (K L : fieldType) (iota : {injmorphism K -> L}).
   
 Hint Resolve tofrac_inj.
 
@@ -37,52 +38,16 @@ Local Notation "p ^ f" := (map_poly f p).
 
 Fact size_map_iota_p (p : {poly K}) : size (p ^ iota) = size p.
 Proof. by rewrite size_map_inj_poly // rmorph0. Qed.
-(* rewrite size_map_inj_poly //; [exact: fmorph_inj | exact: rmorph0]. *)
 
 Fact lead_coef_map_iota_p (p : {poly K}) : 
   lead_coef (p ^ iota) = iota (lead_coef p).
 Proof. by rewrite lead_coef_map_inj // rmorph0. Qed.
-(* Proof. rewrite lead_coef_map_inj //; [exact: fmorph_inj| exact: rmorph0]. Qed. *)
-
-
-(* Definition tofrac_iota := 
-         [rmorphism of (@tofrac [idomainType of {poly L}]) \o (map_poly iota)].
-
-Notation "x ~i"  := (tofrac_iota x) (at level 2, format "x ~i"). *)
-
-(* Lemma tofrac_iota_inj : injective tofrac_iota.
-Proof.
-apply: inj_comp ; first exact: tofrac_inj.
-exact: map_poly_inj.
-Qed.
-
-Lemma tofrac_iota_eq0 x : (tofrac_iota x == 0) = (x == 0).
-Proof. rewrite -(rmorph0 tofrac_iota) ; exact: (inj_eq tofrac_iota_inj). Qed.
-
-Definition tofrac_iota_repr := 
-          (fun x => @inl _ (has_pole tofrac_iota x) (frepr tofrac_iota_inj x)).
-
-Definition fracpoly_iota := f_eval_rmorphism tofrac_iota_repr tofrac_iota_inj.
-
-Notation "x ~~i"  := (fracpoly_iota x) (at level 2, format "x ~~i"). *)
 
 Local Notation "p ^ f" := (map_poly f p) : ring_scope.
-
-(* remove both after recompilation *)
-Notation "p ^:FP" := (p ^ (@tofracpoly _)) : ring_scope.
-Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
 
 Local Notation "p ^^ f" := (map_frac f p)  (f at next level, at level 30).
 Local Notation "p ^^^ f" := (map_frac (map_poly f) p)
                               (f at next level, at level 30).
-
-(* Tests 
-Variables (x : {fracpoly K}) (y : {poly K}) (a : K) (b : {fraction K}).
-Check (y ^ iota).
-Check (a %:FP).
-Check (map_frac iota). 
-Check (b ^^ iota).
-Check (x ^^^ iota). *)
 
 Lemma devs_fracpoly_iota (x : {fracpoly K}) : 
     (0.-fppole) (x ^^^ iota) = (0.-fppole) x.
@@ -107,23 +72,6 @@ Qed.
 Lemma horner_prod_comm (s : seq {poly L}) (x : L) : 
   (\prod_(q <- s) (q)).[x] = \prod_(q <- s) (q.[x]).
 Proof. by rewrite -horner_evalE rmorph_prod. Qed.
-
-(* Lemma ev_map (p : {poly K}) (a : K) : ev (iota a) (p ^ iota) = iota (ev a p).
-Proof. by rewrite /ev /= !horner_evalE horner_map. Qed.
-
-Lemma fracpoly_ev_map (p : {fracpoly K}) (a : K) :
-  fracpoly_ev (iota a) (p ~~i) = iota (fracpoly_ev a p).
-Proof.
-have [ [ p1 p2 Hp /andP [ p2_neq0 coprime_p1_p2 ] ] ] := fracpolyE p.
-rewrite /= in Hp p2_neq0 coprime_p1_p2.
-rewrite Hp fmorph_div !map_frac_tofrac /tofrac_iota [LHS]/=.
-rewrite !fracpoly_ev_div_coprimep // ; last by rewrite coprimep_map.
-by rewrite !fracpoly_ev_frac !ev_map fmorph_div.
-Qed.
-
-Lemma evE (K' : fieldType) (a : K') (p : {poly K'}) : ev a p = p.[a].
-Proof. by rewrite /ev /= horner_evalE. Qed. *)
-Locate "^^^".
 
 (* TODO: is it general enough? *)
 Lemma to_fracpoly_map_iota (p : {poly K}) :
@@ -155,10 +103,6 @@ have [a_eq_i | a_neq_i] := boolP (a == i).
 move/negbTE : a_neq_i => /= ->.
 by rewrite big_cons. 
 Qed.
-
-(* Fact in_rem (I : eqType) (rI : seq I) (a b : I) : 
-    a \in (rem b rI) -> a \in rI.
-Proof. exact: (mem_subseq (rem_subseq _ _)). Qed. *)
 
 Definition newton (K' : fieldType) (p : {poly K'}) := 
   (revp (deriv p))%:F / (revp p)%:F.
@@ -192,12 +136,6 @@ Qed.
 
 Definition newton_tfps (K' : fieldType) (m : nat) (p : {poly K'}) := 
   Tfpsfp m (newton p).
-
-(* Lemma map_tfps_newton_tfps (p : {poly K}) : 
-  map_tfps iota (newton_tfps n p) = newton_tfps n (p ^ iota).
-Proof.
-by rewrite /newton_tfps newton_map_poly -mapf_Tfpsfp.
-Qed. *)
 
 Lemma newton_tfps0 (m : nat) : newton_tfps m (0 : {poly K}) = 0.
 Proof. by rewrite /newton_tfps newton0 Tfpsfp0. Qed.
@@ -243,28 +181,6 @@ move: (three_cases p) => [ [ p_eq0 | [c [ p_eq_cst Hc ] ] ] | p_neq_cst ].
   by rewrite -rmorphX raddf_eq0 //= polyXn_eq0 // orFb.
 Qed. 
 
-(* Lemma Xinv_Npole (K' : fieldType) (p : {fracpoly K'}) : 
-                               ~ has_pole (ev (Xinv K')) (@lift_fracpoly K' p).
-Proof.
-have [p_eq0 | p_neq0] := eqVneq p 0 => [ | H_has_pole ].
-  by rewrite p_eq0 rmorph0 ; apply Npole0.
-move: (comp_fracpoly_eq0 H_has_pole).
-move: (fracE p) => [ [ p1 p2 ] /= Hp p2_neq0 ].
-rewrite Hp comp_fracpoly_div ; last first.
-+ have -> : f_eval (aux_evrepr (Xinv K')) ((lift_fracpoly K') p2%:F) =
-  (p2 %:F) \FPo  (Xinv K').
-    by rewrite /comp_fracpoly /fracpoly_ev.
-  rewrite aux_revp_p_Xinv mulf_neq0 //.
-- by rewrite invr_eq0 expf_neq0 // raddf_eq0 polyX_eq0.
-- by rewrite raddf_eq0 revp_eq0.
-+ move/eqP ; rewrite mulf_eq0 invr_eq0 !comp_fracpoly_poly_Xinv_eq0.
-  move/negbTE : p2_neq0 ->.
-  rewrite orbF ; move/eqP => p1_eq_0.
-  by move: p_neq0 ; rewrite Hp p1_eq_0 rmorph0 mul0r eqxx.
-Qed. 
-
-Hint Resolve Xinv_Npole. *)
-
 Lemma map_Tfpsfp (p : {fracpoly K}) (n : nat) :
   Tfpsfp n p ^ iota = Tfpsfp n (p ^^^ iota).
 Proof.
@@ -287,31 +203,11 @@ have [ j_lt_min | min_leq_j ] := ltnP j (minn m1 m2).
   by case: (_ < _).
 Qed.
 
-(* Lemma geometric_series (a : K) (m : nat) :
-  to_powerseries m (((1-a *: 'X)%:F) ^-1) 
-  = powerseries_of_poly (\poly_(j < m.+1) (a ^+ j)) (leqnn _). *)
-
 Section Variable_m.
 Variable (m : nat).
 
 Local Open Scope tfps_scope.
 Local Notation "c %:S" := (Tfpsp m (c %:P)) (at level 2).
-
-(* Lemma eq_tfps (K' : fieldType) (s s' : {tfps K' m}) :
-  (forall i : 'I_m.+1, s`_i = s'`_i) <-> (s = s').
-Proof.
-split=> [eq_s|-> //]; apply/val_inj/polyP => i /=.
-have [i_small|i_big] := ltnP i m.+1; first by rewrite (eq_s (Ordinal i_small)).
-by rewrite -[s]tfps_coefK -[s']tfps_coefK !coef_tfps leqNgt i_big.
-Qed. *)
-
-(* Lemma eq_tfps_of_fun (K' : fieldType) (f g : nat -> K') : *)
-(*   (forall i : 'I_m.+1, f i = g i) <-> *)
-(*   ([tfps i => f i] = [tfps i => g i] :> {tfps K' m}). *)
-(* Proof. *)
-(* by rewrite -eq_tfps; split=> H i; have := H i; rewrite !coef_tfps leq_ord. *)
-(* Qed. *)
-
 
 Lemma geometric_series (K' : fieldType) (a : K') :
   Tfpsfp m (((1 - a *: 'X)%:F) ^-1) = [tfps j => a ^+ j].
@@ -332,49 +228,8 @@ rewrite [X in _ - X](eq_bigr (fun i => a ^+ (nat_of_ord i).+1 *:
 rewrite -opprB -sumrB. 
 rewrite -(big_mkord predT (fun i => a ^+ i.+1 *: 'X^i.+1 - a ^+ i *: 'X^i)) /=.
 rewrite telescope_sumr // opprB coefB !coefZ !expr0 mul1r coefXn.
-have [|] := ltnP i m.+1; last by rewrite coefC; case: i.
+have [|] := ltnP; last by rewrite coefC; case: i.
 by rewrite ltn_neqAle => /andP [ /negbTE -> _]; rewrite mulr0 subr0. 
-Qed.
-
-(* Lemma geometric_series (K' : fieldType) (a : K') (m : nat) :
-  Tfpsfp m (((1-a *: 'X)%:F) ^-1) = Tfpsp m (\poly_(j < m.+1) (a ^+ j)).
-Proof.
-have dev: devs (1 - a *: 'X)%:F^-1. exact: devs_inv1subCX.
-rewrite Tfpsfp_inv_tofrac; last first.
-  by rewrite -horner_coef0 one_sub_CX_0_eq_1 oner_neq0.
-have Hunit: (Tfpsp m (1 - a *: 'X)) \is a GRing.unit.
-  by rewrite Tfpsp_is_unit -horner_coef0 one_sub_CX_0_eq_1 oner_neq0.
-apply: (mulrI Hunit) ; rewrite divrr ; last first.
-  by rewrite Tfpsp_is_unit -horner_coef0 one_sub_CX_0_eq_1 oner_neq0.
-rewrite -rmorphM /= ; apply: val_inj => /=.
-rewrite poly_def -[1 - a *: 'X]opprK opprB mulNr modp_opp.
-have -> : \sum_(i < m.+1) a ^+ i *: 'X^i = \sum_(i < m.+1) (a*:'X) ^+i.
-  apply: eq_big => // i _.
-  by rewrite exprZn.
-rewrite -subrX1 modp_add exprZn -mul_polyC modp_mull add0r -modp_opp opprK.
-by rewrite modp_small // size_polyXn size_polyC oner_neq0.
-Qed. *)
-
-(* Lemma geometric_series2 (K' : fieldType) (a : K') :
-  Tfpsfp m (((1-a *: 'X)%:F) ^-1) = \poly_(j < m.+1) (a ^+ j) :> {poly K'}.
-Proof. 
-rewrite geometric_series /= modp_small // size_polyXn.
-exact: size_poly.
-Qed.
-
-Lemma geometric_series3 (K' : fieldType) (a : K') (m : nat) :
-  (Tfpsfp m (((1-a *: 'X)%:F) ^-1)) = \poly_(j < m.+1) (a ^+ j) :> {poly K'}.
-Proof. by rewrite geometric_series2. Qed. *)
-
-Fact truncate_poly2 (K' : fieldType) (n n': nat) (E : nat -> K') : n < m ->
-   Tfpsp n (\poly_(i < m.+1) E i) = \poly_(i < n.+1) E i :> {poly K'}.
-Proof. by move => n_lt_m; rewrite /= poly_modp // ltnW. Qed.
-
-Fact poly_size_leq (p : {poly K}) : 
-  size p <= m -> p = \poly_(i < m) p`_i.
-Proof.
-move => leq_sizep_m.
-by rewrite -{1}(@modp_small _ p ('X ^+ m)) ?size_polyXn // poly_coef.
 Qed.
 
 Fact aux_eq_modp (p q : {poly K}) : size q <= m ->
@@ -384,16 +239,6 @@ move => leq_sizeq_m.
 move/(congr1 (fun x => x %% 'X^m)).
 by rewrite modp_modp ?dvdp_exp2l // [X in _ = X]modp_small // size_polyXn.
 Qed.
-
-(* Local Notation "p `d" := (deriv_tfps p) (at level 2). *)
-(* Local Notation "c %:S" := (Powerseries (constP n c)) (at level 2). *)
-
-(* Lemma constP01 : (Powerseries (constP 0 (1 : K))) = 1.
-Proof. by apply: val_inj. Qed. *)
-(* to replace by constP1*)
-
-(* Lemma constP1 (m : nat) : (Powerseries (constP m (1 : K))) = 1.
-Proof. by apply: val_inj. Qed. *)
 
 Lemma expC (c : K) : exp (c %:S) = (c == 0)%:R %:S.
 Proof.
@@ -419,11 +264,11 @@ move: p ; case: m => /= [p | n p].
   by rewrite [p]tfps_is_cst deriv_tfpsC mul0r expC deriv_tfpsC.
 have [p0_eq0 | p0_neq0] := boolP (p \in (@coef0_is_0 K n.+1)) ; last first.
   by rewrite exp_coef0_isnt_0 // deriv_tfps0 rmorph0 mulr0.
-rewrite !exp_coef0_is_0 //= !deriv_tfpsE //=; apply: val_inj => /=.
+rewrite !exp_coef0_is_0 //= !deriv_tfpsE //=; apply/val_inj => /=.
 rewrite deriv_modp modp_modp ?dvdp_exp2l // modp_modp ?dvdp_exp2l //.
 rewrite deriv_sum -(big_mkord predT (fun i => i`!%:R^-1 *: _  ^+ i)) /=.
 rewrite big_nat_recr //= modp_add modp_scalel.
-rewrite modp_exp_eq0 //; last by apply/eqP; rewrite -coef0_is_0E.
+rewrite modX_eq0 //; last by apply/eqP; rewrite -coef0_is_0E.
 rewrite scaler0 addr0 modp_mul modp_mul2 mulr_sumr.
 rewrite -(big_mkord predT (fun i => (i`!%:R^-1 *: (val p) ^+ i)^`())) /=.
 rewrite big_nat_recl // expr0 linearZ /= derivC scaler0 add0r.
@@ -432,7 +277,7 @@ rewrite linearZ /= deriv_exp /= -scalerCA -scaler_nat.
 rewrite scalerA -scalerAl; congr (_ *: _).
 rewrite factS natrM /= invrM ?unitfE ?natmul_inj // -?lt0n ?fact_gt0 //.
 rewrite -mulrA [X in _ * X]mulrC.
-by rewrite divrr ?unitfE ?natmul_inj // -?lt0n ?fact_gt0 // mulr1.
+by rewrite divff ?natmul_inj // -?lt0n ?fact_gt0 // mulr1.
 Qed.
 
 Lemma Tfpsp_modp (m n : nat) (p : {poly K}) : m < n ->
@@ -442,34 +287,18 @@ Proof. by move=> lt_nm; apply/val_inj=> /=; rewrite modp_modp // dvdp_exp2l. Qed
 Lemma deriv_tfps_exp (m : nat) (f : {tfps K m}) (n : nat) :
     (f ^+ n)`d = f`d * (Tfpsp m.-1 f) ^+ n.-1 *+ n.
 Proof.
-elim: n => /= [|n IHn]; first by rewrite expr0 mulr0n deriv_tfps1.
-rewrite exprS deriv_tfpsM {}IHn (mulrC (_ f)) val_tfps_exp /=.
+elim: n => /= [|n IHn]; first by rewrite expr0 mulr0n onefE deriv_tfpsC.
+rewrite exprS deriv_tfpsM {}IHn (mulrC (_ f)) val_exp_tfps /=.
 rewrite mulrC -mulrnAr mulrCA -mulrDr -mulrnAr; congr (_ * _).
 rewrite Tfpsp_modp; last by clear f; case: m.
 rewrite rmorphX /= mulrnAr -exprS; case: n => /= [|n]; rewrite -?mulrS //.
 by rewrite !expr0 mulr0n addr0.
 Qed.
 
-(* Lemma expfSn (m : nat) (f : {tfps K m.+1}) : 
-    f \in (@coef0_is_0 _ _) -> f ^+ m = 0.
-Proof.
-move => H.
-Set Printing Coercions. idtac.
-apply: val_inj => /=.
-rewrite val_tfps_exp.
-Qed. *)
-
 Lemma deriv_Tfps0p (f : {tfps K 0}) : f `d = 0.
 Proof.
-rewrite deriv_tfpsE; apply/val_inj => /=.
-by rewrite deriv_tfps_size1 ?mod0p // size_tfps.
+by rewrite [f]tfps_is_cst deriv_tfpsE deriv_modp derivC mod0p rmorph0.
 Qed.
-
-(* Lemma deriv_Tfps0p (p : {poly K}) : (Tfpsp 0 p) `d = 0.
-Proof.
-rewrite deriv_tfpsE; apply/val_inj => /=.
-by rewrite deriv_modp expr0 modp1 mod0p.
-Qed. *)
 
 Lemma deriv_log (m : nat) (f : {tfps K m}) : 
        f \in (@coef0_is_1 K m) -> (log f) `d = (f `d) / (Tfpsp m.-1 f).
@@ -483,10 +312,9 @@ rewrite big_nat.
 rewrite (eq_bigr (fun i => (f `d) * ((1 - (Tfpsp m f)) ^+ i.-1))) => 
                                                   [|i /andP [hi _]]; last first.
 + rewrite linearZ rmorphX /= deriv_tfpsZ rmorphB rmorph1 deriv_tfps_exp. 
-  rewrite deriv_tfpsB.
-  rewrite rmorphB rmorph1 deriv_tfps1 sub0r /= Tfpsp_modp // -scaler_nat scalerA. 
-  rewrite mulrC divrr ?unitfE ?natmul_inj //-?lt0n // scale1r mulNr opprK.
-  congr (_ * _); apply: val_inj => /=.
+  rewrite deriv_tfpsB rmorphB rmorph1 onefE deriv_tfpsC sub0r /= Tfpsp_modp //.
+  rewrite -scaler_nat scalerA mulrC divff ?natmul_inj //-?lt0n // scale1r mulNr.
+  rewrite  opprK; congr (_ * _); apply/val_inj => /=.
   by rewrite modp_small // size_polyXn ltnS size_tfps.
 + rewrite -big_nat /= -mulr_sumr big_add1 /= big_mkord; congr (_ * _).
   have trp_unit : Tfpsp m f \is a GRing.unit.
@@ -496,7 +324,7 @@ rewrite (eq_bigr (fun i => (f `d) * ((1 - (Tfpsp m f)) ^+ i.-1))) =>
   rewrite -[X in X * _]opprK -[X in X * _]add0r -{1}(subrr 1).
   rewrite -addrA -linearB /= -[X in X * _]opprB mulNr -subrX1 opprB /=.
   apply/val_inj => /=.
-  rewrite val_tfps_exp modp_exp_eq0 ?subr0 // coefB coef1 eqxx.
+  rewrite val_exp_tfps modX_eq0 ?subr0 // coefB coef1 eqxx.
   rewrite coef0_is_1E in f0_is_1.
   rewrite nth0_Tfpsp; move/eqP : f0_is_1 ->.
   by rewrite subrr.
@@ -568,25 +396,19 @@ Proof.
 move => f f0_eq0 /=.
   apply/eqP ; rewrite -subr_eq0 ; apply/eqP.
   apply: pw_eq0.
-- rewrite deriv_tfpsB deriv_log ?exponential_coef0_is_1 // ?exp_coef0_is_1 //.
-  rewrite deriv_exp -mulrA divrr ?mulr1 ?subrr // Tfpsp_is_unit coef0_exp //.
-  exact: oner_neq0.
-- exists 0.
-  rewrite -horner_evalE rmorphB /= !horner_evalE !horner_coef0. 
-  rewrite coef0_log ; last first. 
-    rewrite exp_coef0_is_1 //.
-  rewrite coef0_is_0E in f0_eq0.
-  by move/eqP: f0_eq0 ->; rewrite subr0.
+- rewrite deriv_tfpsB deriv_log ?coef0_is_1E ?coef0_exp //.
+  rewrite deriv_exp -mulrA divrr ?mulr1 ?subrr // Tfpsp_is_unit.
+  by rewrite coef0_exp //; apply: oner_neq0.
+- exists 0; rewrite -horner_evalE rmorphB /= !horner_evalE !horner_coef0.
+  by rewrite coef0_log sub0r; apply/eqP; rewrite oppr_eq0 -coef0_is_0E.
 Qed.
 
 Lemma exp_inj : {in @coef0_is_0 K m &, injective (@exp K m)}.
 Proof.
 move => p q p0_eq0 q0_eq0 /= H.
-have : p `d * (Tfpsp m.-1 (exp p)) = 
-                                        q `d * (Tfpsp m.-1 (exp p)).
+have : p `d * (Tfpsp m.-1 (exp p)) = q `d * (Tfpsp m.-1 (exp p)).
   by rewrite {2}H -!deriv_exp H.
-move/mulIr => H_deriv.
-apply: pw_eq.
+move/mulIr => H_deriv; apply: pw_eq.
 + apply: H_deriv.
   by rewrite Tfpsp_is_unit coef0_exp // oner_neq0.
 + exists 0 ; rewrite !horner_coef0.
@@ -597,74 +419,61 @@ Lemma log_inj : {in @coef0_is_1 K m &, injective (@log K m)}.
 Proof.
 move => p q p0_eq0 q0_eq0 /= Hlog.
 have H: (p/q) `d = 0.
-  rewrite deriv_tfpsdiv ; last first.
-    move: q0_eq0.
-    rewrite coef0_is_1E => /eqP ->.
-    exact: oner_neq0.
+  rewrite deriv_div_tfps; last first.
+    by move: q0_eq0; rewrite coef0_is_1E => /eqP ->; apply: oner_neq0.
   have -> : p `d * Tfpsp m.-1 q - Tfpsp m.-1 p * q `d = 0 ; 
     last by rewrite mul0r.
-  apply/eqP.
-  rewrite subr_eq0 [Tfpsp m.-1 p * q `d]mulrC.
+  apply/eqP; rewrite subr_eq0 [Tfpsp m.-1 p * q `d]mulrC.
   rewrite -eq_divr ?Tfpsp_is_unit ; last 2 first.
-      move: p0_eq0 ; rewrite coef0_is_1E => /eqP ->.
-      exact: oner_neq0.
-      move: q0_eq0 ; rewrite /coef0_is_1E => /eqP ->.
-      exact: oner_neq0.
-  move/(congr1 (@deriv_tfps K m)) : Hlog.
-  by rewrite !deriv_log // => ->.
+      by move: p0_eq0; rewrite coef0_is_1E => /eqP ->; apply: oner_neq0.
+      by move: q0_eq0; rewrite coef0_is_1E => /eqP ->; apply: oner_neq0.
+  by move/(congr1 (@deriv_tfps K m)) : Hlog; rewrite !deriv_log // => ->.
 move: (pw_cst H) => [c Hpq].
 have Hc : c = 1.
-  move: Hpq.
-  move/(congr1 (fun x => x * q)).
+  move/(congr1 (fun x => x * q)): Hpq.
   rewrite mulrAC -mulrA divrr ; last first.
-    by apply: coef0_is_1_unit.
-  rewrite mulr1 ; move/val_eqP => /=.
-  rewrite modp_small ; last first.
-    rewrite modp_small ?size_polyC ?size_polyXn; last first.
-      by apply: (leq_trans (leq_b1 _)).
-    rewrite mul_polyC.
-    apply: (leq_trans (size_scale_leq _ _)).
+    rewrite unit_tfpsE.
+    rewrite coef0_is_1E in q0_eq0.
+    by move/eqP: q0_eq0 ->; apply: oner_neq0.
+  rewrite mulr1; move/val_eqP => /=.
+  rewrite modp_small; last first.
+    rewrite modp_small ?size_polyC ?size_polyXn ?(leq_ltn_trans (leq_b1 _)) //. 
+    rewrite mul_polyC (leq_ltn_trans (size_scale_leq _ _)) //.
     exact: size_tfps.
-  move/eqP.
-  move/(congr1 (fun x => x.[0])).
+  move/eqP; move/(congr1 (fun x => x.[0])).
   rewrite !horner_coef0 coef0M.
-  move: p0_eq0 ; rewrite coef0_is_1E => /eqP ->.
-  move: q0_eq0 ; rewrite coef0_is_1E => /eqP ->.
+  move: p0_eq0; rewrite coef0_is_1E => /eqP ->.
+  move: q0_eq0; rewrite coef0_is_1E => /eqP ->.
   rewrite modp_small ?mulr1 ?coefC ?eqxx //.
-  by rewrite size_polyC size_polyXn; apply: (leq_trans (leq_b1 _)).
-move: Hpq ; rewrite Hc.
-move/(congr1 (fun x => x * q)).
+  by rewrite size_polyC size_polyXn (leq_ltn_trans (leq_b1 _)).
+move: Hpq; rewrite Hc; move/(congr1 (fun x => x * q)).
 rewrite mulrAC -mulrA divrr ; last first.
-  by apply: coef0_is_1_unit.
-rewrite mulr1.
-move/val_eqP => /=.
-rewrite modp_mul2.
-rewrite mul1r modp_small // ; last first.
-  rewrite size_polyXn.
-  exact: size_tfps.
-move/eqP => H2.
-by apply: val_inj.
+  rewrite unit_tfpsE.
+  rewrite coef0_is_1E in q0_eq0.
+  by move/eqP: q0_eq0 ->; apply: oner_neq0.
+rewrite mulr1; move/val_eqP => /=.
+rewrite modp_mul2 mul1r modp_small //; last first.
+  by rewrite size_polyXn; apply: size_tfps.
+by move/eqP => H2; apply/val_inj.
 Qed.
 
-Lemma cancel_exp_log : 
-               {in @coef0_is_1 K m, cancel (@log K m) (@exp K m)}.
+Lemma cancel_exp_log : {in @coef0_is_1 K m, cancel (@log K m) (@exp K m)}.
 Proof.
 move => p p0_eq1 /=.
 apply: log_inj => //.
-  apply: exp_coef0_is_1.
+  rewrite coef0_is_1E.
+  apply/eqP; rewrite coef0_exp //.
   by rewrite coef0_is_0E; apply/eqP; rewrite coef0_log.
 by rewrite cancel_log_exp // coef0_is_0E coef0_log.
 Qed.
 
-Lemma newton_tfps_map_iota (p : {poly K}) :
-  (newton_tfps m p) ^ iota = newton_tfps m (p ^ iota).
-Proof. 
-by rewrite map_Tfpsfp /newton_tfps newton_map_poly.
-Qed.
+Lemma newton_tfps_map_iota (p : {poly K}) : 
+    (newton_tfps m p) ^ iota = newton_tfps m (p ^ iota).
+Proof. by rewrite map_Tfpsfp /newton_tfps newton_map_poly. Qed.
 
 Lemma newton_tfps_map_iota2 (p : {poly K}) :
 map_tfps iota (newton_tfps m p) = newton_tfps m (p ^ iota).
-Proof. by apply: val_inj => /=; rewrite newton_tfps_map_iota mod_tfps. Qed.
+Proof. by apply/val_inj => /=; rewrite newton_tfps_map_iota mod_tfps. Qed.
 
 End NewtonRepresentation.
 
@@ -729,22 +538,9 @@ rewrite -valp_eq0E // in H.
 by move/eqP : H ->.
 Qed.
 
-(* Notation "x ~~i"  := (fracpoly_iota iota x) (at level 2, format "x ~~i").
-Notation "p \FPo q" := (comp_fracpoly q p) (at level 2, format "p \FPo q").
-Notation "x %:FP" := (EvalRatFrac.to_fracpoly x). 
-Notation "p ^:FP" := (p ^ (@EvalRatFrac.to_fracpoly _)). *)
-
-(* remove both after recompilation *)
-Notation "p ^:FP" := (p ^ (@tofracpoly _)) : ring_scope.
-Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
-
 Local Notation "p ^^ f" := (map_frac f p)  (f at next level, at level 30).
 Local Notation "p ^^^ f" := (map_frac (map_poly f) p)
                               (f at next level, at level 30).
-
-(* Variables (p : {poly K}) (q : {fracpoly K}).
-Check ((p ^iota) %:F).
-Check (q ^^^ iota). *)
 
 Lemma comp_p_q (p : {poly K}) (q : {fracpoly K}) :  
   ((p ^iota) %:F) \FPo (q ^^^ iota) 
@@ -777,9 +573,8 @@ have -> : 'X%:F ^+ (size p).-1 = \prod_(r <- iroots p) 'X%:F => [t|].
     by rewrite count_predT size_roots. 
   exact: Monoid.iteropE. 
 rewrite -big_split rmorph_prod; apply: eq_big => //= i _.
-rewrite mulrBl rmorphD /= map_fracpolyXV mulrC divrr; last first.
-  rewrite unitfE raddf_eq0 ?polyX_eq0 //.
-  exact: tofrac_inj.
+rewrite mulrBl rmorphD /= map_fracpolyXV mulrC divff; last first.
+  by rewrite raddf_eq0 ?polyX_eq0 //; apply: tofrac_inj.
 by rewrite rmorphN /= tofrac_scale.
 Qed.
 
@@ -806,14 +601,13 @@ rewrite revp_factorization -mulrA -scalerA.
 have [-> | p_neq0] := eqVneq p 0 ; first by rewrite lead_coef0 rmorph0 !scale0r.
 congr (_ *: _).
 rewrite (bigID (fun r => (r == 0)) predT _) /=.
-rewrite (eq_bigr (fun r => 1)) => [ | r /eqP -> ] ; 
-                                                 last by rewrite scale0r subr0.
+rewrite (eq_bigr (fun r => 1)) => [|r /eqP ->]; last by rewrite scale0r subr0.
 rewrite big1_eq mul1r -scalerA -scaler_prod.
 have <- : \prod_(i <- iroots p | i != 0) -(1 : L) = 
-                                                (-1) ^+ ((size p).-1 - mu 0 p).
-  rewrite prod_cond_const ; congr (_ ^+ _).
+                                                  (-1) ^+ ((size p).-1 - mu 0 p).
+  rewrite prod_cond_const; congr (_ ^+ _).
   rewrite -size_roots -(count_predC (fun x => x == 0)) addnC.
-  have -> : mu 0 p = count (eq_op^~ 0) (iroots p).
+  have ->: mu 0 p = count (eq_op^~ 0) (iroots p).
     rewrite /mu roots_mu ; last by rewrite map_poly_eq0.
     by apply: eq_in_count.
   rewrite -addnBA // subnn addn0.
@@ -898,20 +692,23 @@ Qed.
 
 Hypothesis char_K_is_zero : [char K] =i pred0.
 
-Lemma tofracpolyXV_eq0 (F : fieldType)  (p : {poly F}) : (p%:F \FPo 'X^-1 == 0) = (p == 0).
+Lemma tofracpolyXV_eq0 (F : fieldType)  (p : {poly F}) : 
+    (p%:F \FPo 'X^-1 == 0) = (p == 0).
 Proof.
 rewrite -revp_eq0 -[RHS](rmorph_eq0 [injmorphism of @tofrac _]) /=.
 by rewrite tofrac_revp mulf_eq0 orbC expf_eq0 rmorph_eq0 polyX_eq0 andbF.
 Qed.
 
-Lemma fracpolyXV_eq0 (F : fieldType) (f : {fracpoly F}) : (f \FPo 'X^-1 == 0) = (f == 0).
+Lemma fracpolyXV_eq0 (F : fieldType) (f : {fracpoly F}) : 
+    (f \FPo 'X^-1 == 0) = (f == 0).
 Proof.
 have [[p q] /= -> /andP [a_neq0 cpq]] := fracpolyE f.
 rewrite comp_frac_frac // !mulf_eq0 !invr_eq0.
 by rewrite !tofracpolyXV_eq0 !rmorph_eq0.
 Qed.
 
-Lemma nocomp_fracpolyXV (F : fieldType) (f : {fracpoly F}) : nocomp_fracpoly f 'X^-1 = false.
+Lemma nocomp_fracpolyXV (F : fieldType) (f : {fracpoly F}) :
+    nocomp_fracpoly f 'X^-1 = false.
 Proof.
 have [->|f_neq0]:= eqVneq f 0; first by rewrite nocomp_polyF.
 by apply/negP => /comp_fracpoly_dflt; apply/eqP; rewrite fracpolyXV_eq0.
@@ -979,7 +776,7 @@ Definition composed_sum (p q : {poly K}) :=
   \prod_(r <- [seq s+t | s <- iroots p, t <- iroots q]) ('X - r%:P).
 
 Lemma composed_sumP (p q : {poly K}) : p != 0 -> q != 0 -> composed_sum p q = 
-             \prod_(r <- [seq s+t | s <- iroots p, t <- iroots q]) ('X - r%:P).
+               \prod_(r <- [seq s+t | s <- iroots p, t <- iroots q]) ('X - r%:P).
 Proof.
 move/negbTE => p_neq0 /negbTE q_neq0.
 by rewrite /composed_sum p_neq0 q_neq0.
@@ -1058,7 +855,7 @@ Lemma roots_composed_sum(p q : {poly K}) :
   roots (composed_sum p q) =p [seq s+t | s <- iroots p, t <- iroots q].
 Proof.
 move => p_neq0 q_neq0.
-rewrite composed_sum_is_prod // ; exact: perm_eq_roots_factors.
+rewrite composed_sum_is_prod //; exact: perm_eq_roots_factors.
 Qed.
 
 End Newton.
@@ -1067,7 +864,8 @@ Lemma map_poly_idfun (R : ringType) : map_poly (@idfun R) =1 @idfun {poly R}.
 Proof. exact: coefK. Qed.
 
 Lemma idfun_injective A : injective (@idfun A). Proof. done. Qed.
-Canonical idfun_is_injmorphism (A : ringType) := InjMorphism (@idfun_injective A).
+Canonical idfun_is_injmorphism (A : ringType) := 
+    InjMorphism (@idfun_injective A).
 
 Lemma iroots_idfun (p : {poly L}) : 
   iroots [injmorphism of (@idfun L)] p = roots p.
@@ -1099,8 +897,8 @@ Lemma nth_newton_tfps (p : {poly L}) (m i : nat) :
   (newton_tfps m p)`_i = if i < m.+1 then
   (\sum_(r <- iroots [injmorphism of (@idfun L)] p) r ^+i) else 0.
 Proof.
-have -> : val (newton_tfps m p) = map_tfps [rmorphism of (@idfun L)] 
-                                                      (newton_tfps m p).
+have -> : val (newton_tfps m p) = 
+                            map_tfps [rmorphism of (@idfun L)] (newton_tfps m p).
   by rewrite -map_poly_tfps map_poly_id.
 by rewrite iota_newton_tfps //= coef_poly.
 Qed.
@@ -1146,7 +944,7 @@ have [q_eq0 | q_neq0 ] := eqVneq q 0.
 have -> : newton_tfps m (composed_product iota p q) =
     newton_tfps m (composed_product iota p q) ^ [rmorphism of (@idfun L)]
   by rewrite map_powerseries_idfun.
-rewrite map_tfps_mul !iota_newton_tfps //; apply/eq_tfps => i /=.
+rewrite map_hmul !iota_newton_tfps //; apply/eq_tfps => i /=.
 rewrite !coef_poly ltn_ord.
 rewrite (big_distrl _ _ _) /=.
 rewrite (eq_big_perm [seq s * t | s <- iroots iota p, t <- iroots iota q])
@@ -1170,17 +968,19 @@ Lemma nth_expX (K' : fieldType) (m i : nat) :
 have [->|m_neq0] := eqVneq m O.
   case:i => [|i]; last by rewrite tfps_nth_default.
   by rewrite coef0_exp ?fact0 ?invr1 // coef0_is_0E coef_Tfpsp coefX.
-rewrite /expX /exp coef_Tfpsp coefX eqxx /= coef_modXn. 
+rewrite /expX /exp coef0_is_0E coef_Tfpsp coefX eqxx /= coef_modXn.
 rewrite (eq_bigr (fun i => (nat_of_ord i)`!%:R^-1 *: 
-                                             'X ^+ (nat_of_ord i))); last first.
+                                              'X ^+ (nat_of_ord i))); last first.
   by move => j _; rewrite modp_small // size_polyX size_polyXn !ltnS lt0n.
 by rewrite -(@poly_def _ _ (fun i => i`!%:R^-1))  coef_poly; case: (_ < _).
 Qed.
 
+(* can be generalized to (exp f) ^ iota = exp (f ^ iota) *)
 Lemma map_iota_expX (m : nat) : expX K m ^ iota = expX L m.
 Proof.
-rewrite /expX /exp !nth0_Tfpsp !coefX !eqxx -truncate_map_poly rmorph_sum . 
-congr Tfpsp; apply: eq_bigr => i _; rewrite linearZ /=; congr (_ *: _).
+rewrite /expX /exp !coef0_is_0E !nth0_Tfpsp !coefX !eqxx -truncate_map_poly. 
+rewrite rmorph_sum; congr Tfpsp; apply: eq_bigr => i _.
+rewrite linearZ ; congr (_ *: _).
   by rewrite rmorphV ?rmorph_nat // unitfE natmul_inj // -lt0n fact_gt0.
 by rewrite rmorphX /= map_modp map_polyX map_polyXn.
 Qed.
@@ -1190,52 +990,22 @@ Local Open Scope tfps_scope.
 Lemma hmul_tfps_p_expX (K' : fieldType) (m : nat ) (p : {tfps K' m}) : 
   hmul_tfps p (expX K' m) = [tfps i => p`_i / i`!%:R].
 Proof.
-apply: val_inj => /=.
+apply/val_inj => /=.
 apply/polyP => i.
 rewrite !coef_poly nth_expX.
 by case: (i < m.+1).
 Qed.
 
-(* Definition aux_pwX (K' : fieldType) (m : nat) := 
-  if (m == 0%N) then (1 : K')%:P else 'X.
-
-Fact pwX_proof (K' : fieldType) (m : nat) : size (aux_pwX K' m) <= m.+1.
-Proof.
-rewrite /aux_pwX.
-case: m => [|m /=]; first by rewrite eqxx size_polyC leq_b1.
-by rewrite size_polyX.
-Qed.
-
-Definition pwX (K' : fieldType) (m : nat) := Powerseries (pwX_proof K' m).
-
-Fact pwX2_proof (K' : fieldType) (m : nat) :
-  size ('X : {poly K'}) <= m.+2.
-Proof. by rewrite size_polyX. Qed.
-
-Definition pwX2 (K' : fieldType) (m : nat) := Powerseries (pwX2_proof K' m). *)
-
-(* Fact pwX2_in_coef0_is_0 (K' : fieldType) (m : nat) :
-  (pwX2 K' m) \in (@coef0_is_0 K' m.+1).
-Proof. by rewrite inE coefX. Qed.
-
-Lemma pwX_in_coef0_is_0 (K' : fieldType) (m : nat) : 
-  (pwX K' m.+1) \in (@coef0_is_0 K' m.+1).
-Proof. by rewrite inE coefX. Qed.
-
-Lemma pwXS (K' : fieldType) (m : nat) : (pwX K' m.+1) = (pwX2 K' m).
-Proof. by apply: val_inj => /=. Qed. *)
-
-Lemma aux_newton_composed_sum (K' : fieldType) (f : {rmorphism K' -> L}) (m : nat)
-  (s t : seq K') (p : {tfps K' m}) : p \in (@coef0_is_0 K' m) ->
+Lemma aux_newton_composed_sum (K' : fieldType) (f : {rmorphism K' -> L}) 
+  (m : nat) (s t : seq K') (p : {tfps K' m}) : p \in (@coef0_is_0 K' m) ->
   \sum_(w <- [seq u + v | u <- s, v <- t]) (exp (w *: p)) = 
-  (\sum_(u <- s) (exp (u *: p))) 
-                               * (\sum_(v <- t) (exp (v *: p))).
+  (\sum_(u <- s) (exp (u *: p))) * (\sum_(v <- t) (exp (v *: p))).
 Proof.
 move => p0_eq0.
 have H : [char K'] =i pred0.
   move => x.
   rewrite -(fmorph_char f).
-  by move: x.
+  by move: x. (* strange *)
 rewrite eq_big_allpairs /=.
 have -> : \sum_(i <- s) \sum_(j <- t) exp ((i + j) *: p) =
    \sum_(i <- s) \sum_(j <- t) (exp (i *: p)) * (exp (j *: p)).
@@ -1258,33 +1028,28 @@ Proof.
 have [ -> | p_neq0] := eqVneq p 0.
   by rewrite newton_tfps0 hmul_tfps0r iroots0 big_nil.
 rewrite hmul_tfps_p_expX.
-apply: val_inj => /=.
+apply/val_inj => /=.
 rewrite poly_def.
 have -> : \sum_(i < m.+2) ((newton_tfps m.+1 p)`_i / i`!%:R) *: 'X^i =
-     \sum_(i < m.+2) ((\sum_(r <- iroots [injmorphism of @idfun L] p) r ^+ i) / i`!%:R) *: 'X^i.
-  apply: eq_bigr => i _.
-  congr (_ *: _).
-  congr (_ / _).
+     \sum_(i < m.+2) ((\sum_(r <- iroots [injmorphism of @idfun L] p) r ^+ i) 
+                                                               / i`!%:R) *: 'X^i.
+  apply: eq_bigr => i _; congr (_ *: _); congr (_ / _).
   rewrite nth_newton_tfps ?ltn_ord //.
 have -> : \sum_(i < m.+2)
    ((\sum_(r <- iroots [injmorphism of @idfun L] p) r ^+ i) / i`!%:R) *: 'X^i =
 \sum_(i < m.+2)
    ((\sum_(r <- iroots [injmorphism of @idfun L] p) ((r *: 'X) ^+ i) / i`!%:R)).
   apply: eq_bigr => i _.
-  have -> : \sum_(r <- iroots [injmorphism of @idfun L] p) ((r *: 'X) ^+ i) / i`!%:R= 
+  have -> : 
+  \sum_(r <- iroots [injmorphism of @idfun L] p) ((r *: 'X) ^+ i) / i`!%:R = 
   \sum_(r <- iroots [injmorphism of @idfun L] p) ((r ^+i) *: ('X ^+ i)) / i`!%:R.
-    apply: eq_bigr => j _.
-    by rewrite exprZn.
-  rewrite /= mulr_suml scaler_suml ; apply: eq_bigr => j _.
+    by apply: eq_bigr => j _; rewrite exprZn.
+  rewrite /= mulr_suml scaler_suml; apply: eq_bigr => j _.
   rewrite -polyC1 -scaler_nat invrZ ; last 2 first.
-      rewrite unitfE.
-      move/(charf0P L) : char_L_is_zero ->.
+      rewrite unitfE; move/(charf0P L) : char_L_is_zero ->.
       by rewrite -lt0n fact_gt0.
-  rewrite polyC1. 
-  by rewrite unitrE divr1.
-  rewrite -scalerAr divr1.
-  rewrite scalerA.
-  by rewrite mulrC.
+  by rewrite polyC1 unitrE divr1.
+  by rewrite -scalerAr divr1 scalerA mulrC.
 rewrite exchange_big /=.
 rewrite (@big_morph _ _ (fun (x : {tfps L m.+1}) => val x) 0 +%R) //=. 
 apply: eq_big => //= x _.
@@ -1296,10 +1061,8 @@ apply: eq_big => //= i _.
 rewrite ['X %% _]modp_small ?size_polyX ?size_polyXn //.
 rewrite modp_scalel ['X %% _]modp_small ?size_polyX ?size_polyXn //.
 rewrite modp_scalel modp_small; last first.
-  rewrite size_polyXn exprZn.
-  apply: (leq_trans (size_scale_leq _ _)).
-  rewrite size_polyXn.
-  by [].
+  rewrite size_polyXn exprZn (leq_ltn_trans (size_scale_leq _ _)) //.
+  by rewrite size_polyXn ltnS.
 by rewrite mulrC -raddfMn polyC_inv mul_polyC.
 Qed.
 
@@ -1313,39 +1076,18 @@ Proof.
 move => p_neq0 q_neq0 /=.
 set m := ((size p).-1 * (size p).-1)%N.
 case: m => [|m].
-  rewrite !expX0.
-  apply: val_inj => /=.
-  rewrite expr1.
-  rewrite map_modp.
-  rewrite map_polyX.
-  rewrite rmorphM.
-  rewrite !poly_def.
+  rewrite !expX0; apply/val_inj => /=.
+  rewrite expr1 map_modp map_polyX rmorphM !poly_def.
   rewrite !big_ord_recr !big_ord0 !Monoid.simpm.
-  rewrite !expr0.
-  rewrite !coefC.  
-  rewrite eqxx.
-  rewrite !mulr1. 
+  rewrite !expr0 !coefC eqxx !mulr1. 
   rewrite !(newton_tfps_coef0 [injmorphism of (@idfun L)]) //.
-  rewrite !(newton_tfps_coef0 iota) //.
-  rewrite /=.
-  rewrite size_composed_sum //.
-  rewrite natrM.
-  rewrite !linearZ /=.
-  rewrite rmorph1.
-  rewrite !rmorph_nat.
-  rewrite mulr_algr.
-  rewrite scalerA.
-  rewrite mulrC.
-  rewrite expr1 modp_mod.
-  rewrite modp_small //.
-  rewrite size_polyX.
-  apply: (leq_trans (size_scale_leq _ _)).
+  rewrite !(newton_tfps_coef0 iota) //=.
+  rewrite size_composed_sum // natrM !linearZ /=.
+  rewrite rmorph1 !rmorph_nat mulr_algr scalerA mulrC expr1 modp_mod.
+  rewrite modp_small // size_polyX (leq_ltn_trans (size_scale_leq _ _)) //.
   rewrite size_polyC.
   exact: leq_b1.
-rewrite rmorphM /=.
-rewrite !map_tfps_mul.
-rewrite map_iota_expX.
-rewrite !newton_tfps_map_iota2.
+rewrite rmorphM /= !map_hmul map_iota_expX !newton_tfps_map_iota2.
 rewrite !sum_exp_kX. 
 rewrite (eq_big_perm [seq s + t | s <- iroots iota p, t <- iroots iota q]) /= ;
   last exact: iroots_composed_sum.
@@ -1353,8 +1095,6 @@ rewrite !iroots_idfun.
 apply: (aux_newton_composed_sum [rmorphism of @idfun L]).
 by rewrite coef0_is_0E nth0_Tfpsp coefX [in X in X == _]eq_sym. 
 Qed.
-
-(* Notation "x %:FP" := (EvalRatFrac.to_fracpoly x). *) 
 
 Local Notation "p ^^^ f" := (map_frac (map_poly f) p)
                               (f at next level, at level 30).
@@ -1376,44 +1116,6 @@ have [-> | p_neq0] := eqVneq p 0.
 by rewrite /devs (contra (@devs_frac _ _ _)) // coef0_revp lead_coef_eq0.
 Qed.
 
-(* Fact deriv_rev_over_rev_dev_221 (p : {poly K}) :
-  ExpansibleFracpoly (deriv_rev_over_rev_dev2 (map_poly iota p)) = 
-  ExpansibleFracpoly (deriv_rev_over_rev_dev p).
-Proof.
-have [-> | p_neq0] := eqVneq p 0.
-  rewrite map_poly0.
-  apply: val_inj => /=.
-  by rewrite !revp0 !deriv0 !rmorph0 !mul0r map_fracE rmorph0.
-apply: val_inj => /=.
-rewrite !revp_map ; last by move => x ; rewrite iota_eq0.
-rewrite f_eval_div_frac ; last first.
-  by rewrite tofrac_iota_eq0 revp_eq0.
-by rewrite deriv_map.
-Qed.
-
-Fact deriv_rev_over_rev_dev_221 (p : {poly K}) :
-  ExpansibleFracpoly (deriv_rev_over_rev_dev2 (map_poly iota p)) = 
-  ExpansibleFracpoly (deriv_rev_over_rev_dev p).
-Proof.
-have [-> | p_neq0] := eqVneq p 0.
-  rewrite map_poly0.
-  apply: val_inj => /=.
-  by rewrite !revp0 !deriv0 !rmorph0 !mul0r map_fracE rmorph0.
-apply: val_inj => /=.
-rewrite !revp_map ; last by move => x ; rewrite iota_eq0.
-rewrite f_eval_div_frac ; last first.
-  by rewrite tofrac_iota_eq0 revp_eq0.
-by rewrite deriv_map.
-Qed. *)
-
-(* Fact devs_in_pw_C_div_1_sub_CX (K' : fieldType) (a b : K') :
-  devs (a%:FP * (1 - b *: 'X)%:F^-1).
-Proof.
-apply: devs_in_pwM.
-  exact: devs_in_pw_to_fracpoly.
-exact: devs_inv1subCX.
-Qed. *)
-
 Fact aux_conversion1 (p : {poly K}) : ~~ (root p 0) ->
    ((revp p)^`() // revp p) ^^^ iota  = 
   - \sum_(i <- iroots iota p) i%:FP * (1 - i *: 'X)%:F^-1.
@@ -1427,63 +1129,20 @@ rewrite big_map big_seq (eq_bigr (fun r => - (r%:FP * (1 - r *: 'X)%:F^-1)))
   rewrite -invf_div ; apply: invr_inj ; rewrite !invrK.
   have r_neq0 : r != 0.
     apply/eqP => r_eq0.
-    move: Hr ; rewrite r_eq0.
-    rewrite zero_in_iroots ; last by apply: pneq0.
+    move: Hr; rewrite r_eq0.
+    rewrite zero_in_iroots; last by apply: pneq0.
     by apply/negP.
   rewrite invrN invrK -mulNr -tofracN opprB.
-  have H : r%:FP != 0. rewrite raddf_eq0 //; last first. 
-  exact: (inj_comp (@tofrac_inj _) (@polyC_inj _)). 
-  apply: (mulIf H). 
-  rewrite mulrAC -mulrA divff // mulr1 /= -tofracM.
-  apply/eqP. 
- rewrite inj_eq; last first. exact: tofrac_inj.
+  have H : r%:FP != 0.
+    rewrite raddf_eq0 //; last first. 
+    exact: (inj_comp (@tofrac_inj _) (@polyC_inj _)). 
+  apply: (mulIf H); rewrite mulrAC -mulrA divff // mulr1 /= -tofracM.
+  apply/eqP; rewrite inj_eq; last exact: tofrac_inj.
   by rewrite mulrBl mulrC mul_polyC -polyC_mul mulrC divff.
-rewrite /=.
-rewrite sumrN.
-rewrite -big_seq //.
+by rewrite sumrN -big_seq.
 Qed.
 
-(* Fact aux_conversion1 (p : {poly K}) : ~~ (root p 0) ->
-   ExpansibleFracpoly (deriv_rev_over_rev_dev p) = 
-  - \sum_(i <- iroots iota p)  
-  (ExpansibleFracpoly (devs_in_pw_C_div_1_sub_CX i i)).
-Proof.
-move => zeroNroot.
-apply: val_inj => /=.
-rewrite deriv_p_over_p ; last first.
-  rewrite revp_eq0. 
-  by apply: pneq0.
-rewrite (eq_big_perm [seq x^-1 | x <- iroots iota p]) ; 
-                                                    last by rewrite roots_revp.
-rewrite big_map big_seq (eq_bigr (fun r => - (r%:FP * (1 - r *: 'X)%:F^-1))) 
-                                                     => [ | r Hr] ; last first.
-  rewrite -invf_div ; apply: invr_inj ; rewrite !invrK.
-  have r_neq0 : r != 0.
-    apply/eqP => r_eq0.
-    move: Hr ; rewrite r_eq0.
-    rewrite zero_in_iroots ; last by apply: pneq0.
-    by apply/negP.
-  rewrite invrN invrK -mulNr -tofracN opprB.
-  have H : r%:FP != 0 by rewrite raddf_eq0 polyC_eq0.
-  apply: (mulIf H). 
-  rewrite mulrAC -mulrA divff // mulr1 /to_fracpoly /= -tofracM.
-  apply/eqP ; rewrite tofrac_eq.
-  by rewrite mulrBl mulrC mul_polyC -polyC_mul mulrC divff.
-rewrite -big_seq sumrN ; congr (- _) ; symmetry.
-by apply: big_morph.
-Qed. *)
-
-(* Fact scalerpws (K' : fieldType) (m : nat) (a : K') (p : {tfps K' m}) : 
-  (Tfpsfp m a%:FP) * p = a *: p.
-Proof.
-
-rewrite to_powerseries_tofrac truncateC.
-apply: val_inj => /=.
-rewrite mul_polyC modp_small // (leq_ltn_trans (size_scale_leq _ _)) //.
-rewrite size_polyXn.
-exact: size_tfps.
-Qed. *)
-
+(* to generalize ? *)
 Fact aux_conversion2 (m : nat) (p : {poly K}) :
   ~~ (root p 0) ->
   Tfpsfp m (((revp p)^`() // revp p) ^^^ iota) = 
@@ -1513,7 +1172,6 @@ rewrite  modp_small; last first.
   by rewrite size_polyC size_polyXn (leq_ltn_trans (leq_b1 _)).
 by rewrite mul_polyC coefZ coef_poly ltn_ord -exprS.
 Qed.
-(* to generalize ? *)
 
 Fact aux_conversion3 (p : {poly K}) : 
 ((revp p)^`() // revp p) ^^^ iota = 
@@ -1536,12 +1194,12 @@ Local Notation "c %:S" := (Tfpsp m.+1 (c %:P)) (at level 2).
 
 Fact aux_conversion4 (p : {poly K}) : ~~ root p 0 ->
   Tfpsfp m ((revp p)^`() // revp p)
-  = divX (((size p) .-1)%:R %:S - (newton_tfps m.+1 p)).
+  = divfX (((size p) .-1)%:R %:S - (newton_tfps m.+1 p)).
 Proof.
 move => zeroNroot; apply: (@map_tfps_injective _ _ m iota).
-rewrite mapf_Tfpsfp aux_conversion2 // (@map_tfps_divX _ _ iota m.+1).
-rewrite divXE; last first.
-  rewrite -map_poly_tfps coef_map coefB nth0_Tfpsp //.
+rewrite mapf_Tfpsfp aux_conversion2 // (@map_tfps_divfX _ _ iota m.+1).
+rewrite divfXE; last first.
+  rewrite coef0_is_0E -map_poly_tfps coef_map coefB nth0_Tfpsp //.
   by rewrite (newton_tfps_coef0 iota) // coefC /= subrr rmorph0.
 apply/eq_tfps => i.
 rewrite coefN !coef_poly ltn_ord rmorphB coefB [X in X`_i.+1]/=.
@@ -1551,50 +1209,22 @@ rewrite ltnS ltn_ord map_modp map_polyXn modp_mod modp_small; last first.
 by rewrite coef_map coefC /= rmorph0 sub0r /iroots map_poly_id.
 Qed.
 
-(*
-Definition conversion (p : powerseries K n.+1) := 
-exponential (can_powerprim 
-                           (char_K_is_zero iota char_L_is_zero) 
-                           (divX (((size p) .-1)%:R %:S - p))).
-*)
-
 Local Notation "p `d" := (deriv_tfps p) (at level 2).
 
 Lemma exp_prim_derivp_over_p (p : {tfps K m.+1}) :
   p \in (@coef0_is_1 K m.+1) ->
   p = exp (prim_tfps ((p `d) / (Tfpsp m p))).
 Proof.
-move => p0_eq1.
-apply: log_inj => //.
-  apply: exp_coef0_is_1.
-  exact: coef0_prim_tfps_is_0.
-rewrite cancel_log_exp // ; last first.
-  exact: coef0_prim_tfps_is_0.
-apply: pw_eq => // ; last first.
-  exists 0.
-  rewrite !horner_coef0.
-  rewrite coef0_log //.
-  by rewrite coef0_prim_tfps.
-rewrite deriv_log //.
-by rewrite prim_tfpsK.
+move => p0_eq1; apply: log_inj => //.
+  by rewrite coef0_is_1E coef0_exp //; apply: coef0_prim_tfps_is_0.
+rewrite cancel_log_exp //; last exact: coef0_prim_tfps_is_0.
+apply: pw_eq => //; last first.
+  by exists 0; rewrite !horner_coef0 coef0_log // coef0_prim_tfps.
+by rewrite deriv_log // prim_tfpsK.
 Qed.
 
-(*
-Definition conversion (p : powerseries K n.+1) := 
-exp (can_powerprim 
-                           (char_K_is_zero iota char_L_is_zero) 
-                           (divX (((size p) .-1)%:R %:S - p))).
-*)
-
 Definition conversion (p : {tfps K m.+1}) := 
-exp (prim_tfps (divX ((p`_0) %:S - p))).
-
-(*
-Lemma newton_conversion_lemma (p : {poly K}) : 
-  revp p = exp (can_powerprim 
-  (char_K_is_zero iota char_L_is_zero) 
-  (divX (((size p) .-1)%:R %:S - (newton_tfps n.+1 p)))).
-*)
+exp (prim_tfps (divfX ((p`_0) %:S - p))).
 
 Lemma newton_conversion (p : {tfps K m.+1}) : 
   ~~ (root p 0) ->
@@ -1602,31 +1232,19 @@ Lemma newton_conversion (p : {tfps K m.+1}) :
   rev_tfps m.+1 p = conversion (newton_tfps m.+1 p).
 Proof.
 move => Nrootp0 p_monic.
-rewrite /conversion.
-rewrite [LHS]exp_prim_derivp_over_p ; last first.
-  rewrite coef0_is_1E.
-  by rewrite nth0_Tfpsp coef0_revp -monicE.
-congr (exp _).
-congr (prim_tfps _).
-rewrite (newton_tfps_coef0 iota) //.
-rewrite -aux_conversion4 //=.
+rewrite /conversion [LHS]exp_prim_derivp_over_p; last first.
+  by rewrite coef0_is_1E nth0_Tfpsp coef0_revp -monicE.
+congr (exp _); congr (prim_tfps _).
+rewrite (newton_tfps_coef0 iota) // -aux_conversion4 //=.
 rewrite modp_small; last first.
-  rewrite size_polyXn.
-  rewrite size_revp.
-  rewrite (leq_ltn_trans (leq_subr _ _)) //.
+  rewrite size_polyXn size_revp (leq_ltn_trans (leq_subr _ _)) //.
   exact: (size_tfps p).
 rewrite Tfpsfp_frac; last first.
-rewrite coef0_revp.
-move/monicP : p_monic ->.
-apply: oner_neq0.
+  by rewrite coef0_revp; move/monicP : p_monic ->; apply: oner_neq0.
 congr (_ / _).
-rewrite /=.
-rewrite deriv_tfpsE /=.
-rewrite modp_small //.
-  rewrite size_polyXn.
-  rewrite size_revp.
-  rewrite (leq_ltn_trans (leq_subr _ _)) //.
-  exact: (size_tfps p).
+rewrite deriv_tfpsE /= modp_small // size_polyXn size_revp.
+rewrite (leq_ltn_trans (leq_subr _ _)) //.
+exact: (size_tfps p).
 Qed.
 
 End MoreConversion.

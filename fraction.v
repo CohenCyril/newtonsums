@@ -1103,22 +1103,6 @@ Proof. by rewrite comp_poly_fracE; apply: eq_bigr => i _; rewrite exprVn. Qed.
 Lemma nocomp_polyF p f : nocomp_fracpoly p%:F f = false.
 Proof. by rewrite /nocomp_fracpoly map_fracE /= fpole_tofrac. Qed.
 
-(* Lemma comp_frac_frac p q f : (q%:F \FPo f) != 0 -> 
-  (p // q \FPo f) = (p%:F \FPo f) / (q%:F \FPo f).
-Proof.
-rewrite /comp_fracpoly.
-move=> qf_neq0.
-
-rewrite fmorph_div /=.
-
-rewrite feval_frac.
-rewrite /comp_fracpoly.
-rewrite feval_frac.
-rewrite fmorph_div /=.
-Locate ".<[".
-rewrite fpeval_tofrac.
-Qed. *)
-
 Lemma comp_frac_frac p q f :  coprimep p q ->
   (p // q \FPo f) = (p%:F \FPo f) / (q%:F \FPo f).
 Proof.
