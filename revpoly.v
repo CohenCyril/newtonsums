@@ -371,7 +371,7 @@ Qed.
 Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
 
 Lemma tofrac_revp (K : fieldType) (p : {poly K}) : 
-(revp p) %:F = (p %:F \FPo ('X%:F ^-1)) * ('X  %:F ^+(size p).-1).
+(revp p) %:F = (p %:F \FPo 'X^-1) * ('X  %:F ^+(size p).-1).
 Proof.
 have [peq0 | pN0] := boolP (p == 0).
 move/eqP : peq0 => peq0 ; rewrite peq0 comp_fracpoly0 mul0r.

@@ -1,6 +1,7 @@
 (* (c) Copyright Microsoft Corporation and Inria. All rights reserved. *)
-From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice fintype.
-From mathcomp Require Import div tuple bigop ssralg poly polydiv generic_quotient.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice.
+From mathcomp Require Import fintype div tuple bigop ssralg poly polydiv.
+From mathcomp Require Import generic_quotient.
 From Newtonsums Require Import auxresults.
 
 (* This file builds the field of fraction of any integral domain. *)
@@ -432,8 +433,6 @@ Canonical tofracpoly_is_rmorphism (K : fieldType) :=
 Canonical tofracpoly_is_injmorphism (K : fieldType) :=
   [injmorphism of @tofracpoly K].
 
-(* Definition my_tofracpoly := tofracpoly_is_injmorphism. *)
-
 Module RegMorphism.
 
 Section ClassDef.
@@ -640,8 +639,9 @@ rewrite -!rmorphM rmorph_eq => /eqP eqyz'.
 by apply/eqP; rewrite eq_divf // -!rmorphM eqyz'.
 Qed.
 
-Lemma feval_neq0P {x} : reflect (exists2 y, x = y.1 // y.2 & (f y.1 != 0) && (f y.2 != 0))
-                            (feval x != 0).
+Lemma feval_neq0P {x} : 
+    reflect (exists2 y, x = y.1 // y.2 & (f y.1 != 0) && (f y.2 != 0)) 
+            (feval x != 0).
 Proof.
 apply: (iffP idP) => [|[{x} x -> /andP [fx1 fx2]]]; last first.
   by rewrite feval_frac  // ?mulf_neq0 ?invr_eq0.
@@ -650,8 +650,9 @@ rewrite mulf_eq0 negb_or invr_eq0 fx2_neq0 andbT => fx1_neq0.
 by exists (x1, x2); rewrite //= ?mulf_neq0 ?fx1_neq0.
 Qed.
 
-Lemma feval_eq0P {x} : reflect (forall y1 y2, x = y1 // y2 -> (f y1 == 0) || (f y2 == 0))
-                            (feval x == 0).
+Lemma feval_eq0P {x} : 
+    reflect (forall y1 y2, x = y1 // y2 -> (f y1 == 0) || (f y2 == 0))
+            (feval x == 0).
 Proof.
 apply: (iffP idP)=> [fx_eq0 y1 y2 x_def|]; last first.
   by move=> Pf; apply/feval_neq0P => [[y /=]] /Pf; rewrite -negb_or => ->.

@@ -38,10 +38,9 @@ Proof. by move => p_neq0; rewrite fpoleV -horner_coef0 froot_tofrac. Qed.
 
 Lemma devs_inv1subCX (a : K) : devs (1 - a *: 'X)%:F^-1.
 Proof.
-rewrite /devs devs_invf ; last first.
-+ apply: p_neq0 ; exists 0.
-  by rewrite one_sub_CX_0_eq_1 oner_neq0.
-+ by rewrite -horner_coef0 one_sub_CX_0_eq_1 oner_neq0.
+by rewrite /devs devs_invf ?p_neq0 //; [rewrite -horner_coef0| exists 0]; 
+rewrite -horner_evalE rmorphB /= !horner_evalE -mul_polyC hornerCM hornerX 
+                                                   mulr0 hornerC subr0 oner_neq0.
 Qed.
 
 Lemma devs_frac (p q : {poly K}) : (0.-fppole)(p // q) -> q`_0 == 0.
@@ -138,7 +137,7 @@ Qed.
 Lemma Tfpsfp_tofrac (p : {poly K}) : Tfpsfp p %:F = Tfpsp n p.
 Proof.
 rewrite -[p%:F]divr1 -tofrac1 Tfpsfp_frac.
-+ by rewrite tfps1 divr1.
++ by rewrite rmorph1 divr1.
 + by rewrite -horner_coef0 hornerC oner_neq0.
 Qed.
 
@@ -147,7 +146,7 @@ Lemma Tfpsfp_inv_tofrac (p : {poly K}) :
 Proof.
 move => p0_neq0.
 rewrite -[p%:F^-1]mul1r -tofrac1 Tfpsfp_frac //.
-  by rewrite tfps1 mul1r.
+  by rewrite rmorph1 mul1r.
 Qed.
 
 Lemma TfpsfpM : {in devs &, {morph Tfpsfp: x y  / x * y}}.
