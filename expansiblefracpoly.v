@@ -10,7 +10,9 @@ Require Import ssrbool ssrfun eqtype ssrnat seq choice fintype finfun fingroup p
 From mathcomp 
 Require Import div tuple bigop ssralg poly polydiv mxpoly ring_quotient.
 From mathcomp 
-Require Import binomial bigop ssralg finalg zmodp matrix mxalgebra polyXY generic_quotient.
+Require Import binomial bigop ssralg finalg zmodp matrix mxalgebra polyXY.
+From mathcomp 
+Require Import generic_quotient.
 
 From Newtonsums Require Import auxresults fraction truncpowerseries.
 
@@ -58,6 +60,7 @@ rewrite -!rmorphM -rmorphD /=.
 have: (b * d)`_0 != 0 by rewrite coef0M mulf_neq0 // -horner_coef0.
 by apply/contra; apply: devs_frac.
 Qed.
+
 
 Lemma devsM (x y : {fracpoly K}) : devs x -> devs y -> devs (x * y).
 Proof.
@@ -221,3 +224,21 @@ Fact devs0 : devs 0.
 Proof. by rewrite -unfold_in rpred0. Qed.
 
 End ExpansibleFracpoly.
+
+Local Notation "f ^ g" := (map_tfps g f).
+Local Notation "p ^^^ f" := (map_frac (map_poly f) p)
+                              (f at next level, at level 30). 
+
+(* Variables (K L : fieldType) (iota : {injmorphism K -> L}). *)
+
+Lemma map_Tfpsfp (K L : fieldType) (iota : {injmorphism K -> L}) (n : nat) (x : {fracpoly K}) :
+    map_tfps iota (Tfpsfp n x) = Tfpsfp n (x ^^^ iota).
+Proof.
+move: (fracpolyE x) => [ [u v] /= Hx ] /andP [ v_neq0 coprime_u_v ].
+rewrite Hx fmorph_div /= !map_fracE /=.
+have [ v0_eq0 | v0_neq0 ] := eqVneq v`_0 0; last first.
++ rewrite Tfpsfp_frac // Tfpsfp_frac; last first.
+    by rewrite coef_map raddf_eq0 //; apply: fmorph_inj.
++ by rewrite rmorph_div /= ?Tfpsp_is_unit // !Tfps_map_poly. 
+by rewrite !Tfpsfp_eq0 // ?coef_map ?v0_eq0 /= ?rmorph0 // coprimep_map. 
+Qed.

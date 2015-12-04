@@ -1,7 +1,7 @@
 (* (c) Copyright Microsoft Corporation and Inria. All rights reserved. *)
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice.
 From mathcomp Require Import fintype.
-From mathcomp Require Import div tuple bigop ssralg poly.
+From mathcomp Require Import div tuple bigop ssralg poly polydiv.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -245,6 +245,15 @@ Local Notation "p ^ f" := (map_poly f p).
 
 Section AuxiliaryResults.
 
+Local Notation "x =p y"  := (perm_eq x y) (at level 70, no associativity).
+
+Lemma perm_eq_nil (T : eqType) (s : seq T) : (s =p [::]) = (s == [::]).
+Proof.
+apply/idP/idP ; last by move/eqP ->.
+move => H ; apply/eqP.
+by apply: perm_eq_small.
+Qed.
+
 Fact head_rev (T : Type) (s : seq T) (x : T) : head x (rev s) = last x s.
 Proof. by case/lastP: s => [//= |t y]; rewrite rev_rcons last_rcons //=. Qed.
 
@@ -309,6 +318,17 @@ Qed.
 
 Lemma coef0M (p q : {poly R}) : (p * q)`_0 = p`_0 * q`_0.
 Proof. by rewrite coefM big_ord_recl big_ord0 addr0. Qed.
+
+Variable (K : fieldType).
+
+(* p : {poly K} can be generalize ? *)
+Fact modp_sumn (I : Type) (r : seq I) (P : pred I)
+               (F : I -> {poly K}) (p : {poly K}) :
+               (\sum_(i <- r | P i) F i) %% p = \sum_(i <- r | P i) (F i %% p).
+Proof. by rewrite (big_morph ((@modp _)^~ p) (modp_add _) (mod0p _) _). Qed.
+
+Fact modp_mul2 (p q m : {poly K}): ((p %% m) * q) %% m = (p * q) %% m.
+Proof. by rewrite mulrC modp_mul mulrC. Qed.
 
 End AuxiliaryResults.
 

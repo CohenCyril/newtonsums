@@ -7,7 +7,7 @@ From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice.
 From mathcomp Require Import fintype div tuple finfun bigop finset fingroup.
 From mathcomp Require Import perm ssralg poly polydiv mxpoly binomial bigop.
 From mathcomp Require Import finalg zmodp matrix mxalgebra polyXY ring_quotient.
-From Newtonsums Require Import auxresults fraction polydec revpoly.
+From Newtonsums Require Import auxresults fraction polyorder polydec revpoly.
 
 Import FracField.
 
@@ -43,15 +43,17 @@ have [->|pN0] := eqVneq p 0; first by rewrite deriv0 size_poly0.
 by rewrite -ltnS prednK // ?lt_size_deriv // size_poly_gt0. 
 Qed.
 
-Fact polyXP (K : fieldType) (p : {poly K}) : reflect (p`_0 = 0) ('X %| p).
-Proof. by rewrite -['X]subr0 -polyC0 -horner_coef0; apply: polyXsubCP. Qed.
-
 Lemma p_neq0 (p : {poly R}): (exists (x : R), p.[x] != 0) -> p != 0.
 Proof.
 by move => [x px_neq0]; move: px_neq0; apply: contra => /eqP ->; rewrite horner0.
 Qed.
 
-Fact nth0_eq_nth0 (K : fieldType) (p q : {poly K}) : 
+Variable (K : fieldType).
+
+Fact polyXP (p : {poly K}) : reflect (p`_0 = 0) ('X %| p).
+Proof. by rewrite -['X]subr0 -polyC0 -horner_coef0; apply: polyXsubCP. Qed.
+
+Fact nth0_eq_nth0 (p q : {poly K}) : 
    p %= q -> (p`_0 == 0) = (q`_0 == 0).
 Proof.
 move => p_eqp_q; rewrite -!horner_coef0.
@@ -60,6 +62,33 @@ apply/(equivP eqP).
 apply: (rwP2 (polyXsubCP _ _)).
 apply: (aux_equivb (polyXsubCP _ _)).
 by apply: eqp_dvdr.
+Qed.
+
+Hypothesis char_K_is_zero : [char K] =i pred0.
+
+Fact size_deriv (p : {poly K}) : size (p ^`()%R) = (size p).-1.
+Proof.
+have [lt_sp_1 | le_sp_1] := ltnP (size p) 2.
+  move: (size1_polyC lt_sp_1) => ->.
+  by rewrite derivC size_poly0 size_polyC ; case: (_ != _).
+rewrite size_poly_eq // !prednK ; last first.
+  move: (ltn_predK le_sp_1) => H.
+  by move: le_sp_1 ; rewrite -{1}H -[X in _ < X]add1n -add1n leq_add2l.
+rewrite -mulr_natr mulf_eq0 ; apply/norP ; split.
+  by rewrite -lead_coefE lead_coef_eq0 -size_poly_gt0 (ltn_trans _ le_sp_1).
+move: (charf0P K) => char_K_property.
+move/char_K_property : char_K_is_zero => char_K.
+rewrite char_K -lt0n.
+move: (ltn_predK le_sp_1) => H.
+by move: le_sp_1 ; rewrite -{1}H -[X in _ < X]add1n -add1n leq_add2l.
+Qed.
+
+Lemma p_cst (p : {poly K}) : p ^`() = 0 -> {c : K | p = c %:P}.
+Proof.
+move/eqP ; rewrite -size_poly_eq0 size_deriv.
+move/eqP => H_size_p.
+exists p`_0 ; apply: size1_polyC.
+by rewrite (leq_trans (leqSpred _)) // H_size_p. 
 Qed.
 
 (* this kind of injectivity + deriv result could be useful ? *)
@@ -92,11 +121,6 @@ have /polyP /(_ i) := divp_eq p 'X^m.
 by rewrite coefD coefMXn lt_i_m add0r.
 Qed.
 
-Fact modp_sumn (I : Type) (r : seq I) (P : pred I)
-               (F : I -> {poly K}) (p : {poly K}) :
-               (\sum_(i <- r | P i) F i) %% p = \sum_(i <- r | P i) (F i %% p).
-Proof. by rewrite (big_morph ((@modp _)^~ p) (modp_add _) (mod0p _) _). Qed.
-
 (* should not be visible outside this file *)
 Fact modCXn a n : 0 < n -> a%:P %% 'X^n = a%:P :> {poly K}.
 Proof. 
@@ -111,10 +135,6 @@ have [->|v_neq0] := eqVneq v 0; first by rewrite modp0.
 rewrite (divp_eq p v) modp_addl_mul_small ?ltn_modp //.
 by rewrite modp_add [X in X + _]modp_eq0 ?dvdp_mull // add0r.
 Qed.
-
-Fact modp_mul2 (F : fieldType) (p q m : {poly F}):
-                                              ((p %% m) * q) %% m = (p * q) %% m.
-Proof. by rewrite mulrC modp_mul mulrC. Qed.
 
 Fact coef0M (p q : {poly K}) : (p * q)`_0 = p`_0 * q`_0.
 (* Proof. by rewrite coefM big_ord_recl big_ord0 addr0. Qed. *)
@@ -243,6 +263,10 @@ Proof.
 move => leq_nm.
 by rewrite modp_small // size_polyXn ltnS (leq_trans (size_tfps _)).
 Qed.
+
+Fact Tfpsp_modp (m : nat) (p : {poly K}) : n < m ->
+    Tfpsp n (p %% 'X^m) = Tfpsp n p.
+Proof. by move=> lt_nm; apply/val_inj=> /=; rewrite modp_modp // dvdp_exp2l. Qed.
 
 Lemma tfps_nth_default f j : j > n ->  f`_j = 0.
 Proof. by move=> j_big; rewrite nth_default // (leq_trans _ j_big) ?size_tfps. Qed.
@@ -861,7 +885,7 @@ Proof.
 by apply/val_inj; apply/polyP => i; rewrite coef_poly coef_modXn coef_deriv. 
 Qed.
 
-Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : tfps_scope.
+(* Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : tfps_scope. *)
 
 Fact deriv_tfps0 : (0 : {tfps K n}) ^`() = 0.
 Proof.
@@ -901,14 +925,64 @@ Proof. by move => c f g; rewrite deriv_tfpsD deriv_tfpsZ. Qed.
 Canonical deriv_tfps_additive := Additive deriv_tfps_is_linear. 
 Canonical deriv_tfps_linear := Linear deriv_tfps_is_linear.
 
+(* tests *)
+Example test_deriv_tfps0 : 0 ^`() = 0 :> {tfps K n.-1}.
+Proof. by rewrite linear0. Qed. 
+
+Example test_deriv_tfpsD (f g : {tfps K n}) : 
+    (f + g)^`()%tfps = f^`()%tfps + g^`()%tfps.
+Proof. by rewrite linearD. Qed.
+
 End Derivative.
 
 Section MoreDerivative.
 
-Lemma deriv_tfpsM (K : fieldType) (n : nat) (f g : {tfps K n}) :
-   (f * g) ^`() = f ^`()%tfps * (Tfpsp n.-1 g) + (Tfpsp n.-1 f) * g ^`()%tfps.
+Variable (K : fieldType) (m : nat).
+
+Hypothesis char_K_is_zero : [char K] =i pred0.
+
+Lemma pw_cst (f : {tfps K m}) : f ^` () = 0 -> {c : K | f = c %:S}.
 Proof.
-move : f g; case: n => /= [f g | m f g].
+move: f; case: m => [f _| n f]; first by rewrite [f]tfps_is_cst; exists (f`_0).
+rewrite deriv_tfpsE ; move/eqP ; rewrite -val_eqE /= => /eqP. 
+rewrite modp_small => [derivp_eq0|]; last first.
++ rewrite size_polyXn.
+  have [->|fN0] := eqVneq f 0; first by rewrite linear0 size_poly0.
+  by rewrite (leq_trans (lt_size_deriv _)) // size_tfps.
++ move: (p_cst char_K_is_zero derivp_eq0) => [c Hc].
+  by exists c; apply/val_inj => /=; rewrite modCXn.
+Qed.
+
+Lemma pw_eq0 (f : {tfps K m}) : 
+    f ^` () = 0 -> {x : K | (val f).[x] = 0} -> f = 0.
+Proof.
+rewrite deriv_tfpsE /=; move/eqP ; rewrite -val_eqE /=.
+have [-> _ _ // |fN0] := eqVneq f 0. 
+rewrite modp_small ?size_polyXn ?(leq_trans (lt_size_deriv _)) ?size_tfps //.
+  move/eqP => derivp_eq0; move: (p_cst char_K_is_zero derivp_eq0) => [c Hc].
+  rewrite Hc; move => [x hx]; rewrite hornerC in hx.
+  by apply/val_inj => /=; rewrite Hc hx.
+by rewrite (leq_trans (size_tfps _)) //; clear fN0 f; case: m => [|n].
+Qed.
+
+Lemma pw_eq (f g : {tfps K m}) : 
+               f ^` () = g ^` () -> {x : K | (val f).[x] = (val g).[x]} -> f = g.
+Proof.
+move => H [x Hx].
+apply/eqP ; rewrite -subr_eq0 ; apply/eqP.
+apply: pw_eq0; first by rewrite linearB /= H subrr.
+by exists x ; rewrite -horner_evalE rmorphB /= horner_evalE Hx subrr.
+Qed. 
+
+Lemma deriv_Tfps0p (f : {tfps K 0}) : f ^` () = 0.
+Proof.
+by rewrite [f]tfps_is_cst deriv_tfpsE deriv_modp derivC mod0p rmorph0.
+Qed.
+
+Lemma deriv_tfpsM (f g : {tfps K m}) :
+   (f * g) ^`() = f ^`()%tfps * (Tfpsp m.-1 g) + (Tfpsp m.-1 f) * g ^`()%tfps.
+Proof.
+move : f g; case: m => /= [f g | n f g].
   rewrite [f]tfps_is_cst [g]tfps_is_cst -tfpsC_mul !deriv_tfpsC mul0r mulr0.
   by rewrite addr0.
 apply/val_inj; rewrite !deriv_tfpsE //=.   
@@ -916,29 +990,30 @@ rewrite deriv_modp derivM modp_mul modp_mul2 -modp_add modp_mod !modp_add.
 by rewrite !modp_mul; congr (_ + _); rewrite mulrC [in RHS]mulrC modp_mul.
 Qed.
 
-Fact TfpsVf m (K :fieldType) n (f : {tfps K n}) :
-  m <= n -> Tfpsp m (f^-1) = (Tfpsp m f) ^-1.
+Fact TfpsVf n p (f : {tfps K p}) :
+  n <= p ->
+  Tfpsp n (f^-1) = (Tfpsp n f) ^-1.
 Proof.
 move=> leq_mn.
 have [/eqP p0_eq0|p0_neq0] := eqVneq f`_0 0.
   by rewrite ?(invr_out, unit_tfpsE, nth0_Tfpsp, negbK).
-apply: (@mulrI _ (Tfpsp m f)); rewrite ?divrr ?(unit_tfpsE, nth0_Tfpsp) //.
+apply: (@mulrI _ (Tfpsp _ f)); rewrite ?divrr ?(unit_tfpsE, nth0_Tfpsp) //.
 rewrite -rmorphM; apply/val_inj => /=.
-rewrite -(@modp_modp K _ 'X^m.+1 'X^n.+1); last by rewrite dvdp_exp2l.
+rewrite -(@modp_modp K _ 'X^n.+1 'X^p.+1); last by rewrite dvdp_exp2l.
 by rewrite -val_mul_tfps divrr ?unit_tfpsE // modCXn.
 Qed.
 
-Lemma deriv_tfpsV (K :fieldType) (n : nat) (f : {tfps K n}) :
+Lemma deriv_tfpsV (f : {tfps K m}) :
   f \notin (@coef0_is_0 _ _) ->
-  (f ^-1) ^`() = - f ^`()%tfps / Tfpsp n.-1 (f ^+ 2).
+  (f ^-1) ^`() = - f ^`()%tfps / Tfpsp m.-1 (f ^+ 2).
 Proof.
 move => p0_neq0.
 move/eqP: (eq_refl (f / f)).
 rewrite {2}divrr; last by rewrite unit_tfpsE.
-move/(congr1 (@deriv_tfps K n)).
+move/(congr1 (@deriv_tfps K m)).
 rewrite deriv_tfpsM onefE deriv_tfpsC.
 move/eqP ; rewrite addrC addr_eq0 mulrC.
-move/eqP/(congr1 (fun x => x / (Tfpsp n.-1 f))).
+move/eqP/(congr1 (fun x => x / (Tfpsp m.-1 f))).
 rewrite -mulrA divrr; last by rewrite unit_tfpsE nth0_Tfpsp.
 rewrite mulr1 => ->.
 rewrite !mulNr; congr (- _).
@@ -948,25 +1023,25 @@ rewrite -rmorphM /=; apply/val_inj => /=.
 by rewrite modp_modp // dvdp_exp2l // (leq_ltn_trans (leq_pred _)).
 Qed.
                                                              
-Lemma deriv_div_tfps (K :fieldType) (n : nat) (f g : {tfps K n}) :
+Lemma deriv_div_tfps (f g : {tfps K m}) :
   g`_0 != 0 ->
-  (f / g) ^`() = (f^`()%tfps * Tfpsp n.-1 g - Tfpsp n.-1 f * g ^`()%tfps)
-                                                    / (Tfpsp n.-1 (g ^+ 2)).
+  (f / g) ^`() = (f^`()%tfps * Tfpsp m.-1 g - Tfpsp m.-1 f * g ^`()%tfps)
+                                                    / (Tfpsp m.-1 (g ^+ 2)).
 Proof.
 move => g0_neq0.
 rewrite deriv_tfpsM deriv_tfpsV // mulrBl mulrA mulrN mulNr.
 congr (_ - _); rewrite -mulrA; congr (_ * _).
 rewrite TfpsVf //; last exact: leq_pred.
 rewrite expr2 ?leq_pred //. 
-have -> : Tfpsp n.-1 (g * g) = Tfpsp n.-1 ((val g) * g).
+have -> : Tfpsp m.-1 (g * g) = Tfpsp m.-1 ((val g) * g).
   apply/val_inj => /=.
   rewrite modp_modp ?dvdp_exp2l //. 
-  by clear g0_neq0 f g; case: n => //=. 
+  by clear g0_neq0 f g; case: m => //=. 
 rewrite rmorphM /= invrM ?Tfpsp_is_unit ?nth_Tfpsp //.
 by rewrite mulrA divrr ?Tfpsp_is_unit ?nth_Tfpsp // mul1r.
 Qed. 
 
-End MoreDerivative.
+End MoreDerivative. 
 
 Section Primitive.
 
@@ -1073,23 +1148,6 @@ rewrite /prim -{3}[p]coefK ; apply/polyP => i.
 rewrite coef_deriv !coef_poly ltnS.
 case: (_ < _); last by rewrite mul0rn.
 by rewrite eqn0Ngt ltn0Sn -mulr_natr mulrAC -mulrA divff ?natmul_inj // mulr1.
-Qed.
-
-Fact size_deriv (p : {poly K}) : size (p ^`()%R) = (size p).-1.
-Proof.
-have [lt_sp_1 | le_sp_1] := ltnP (size p) 2.
-  move: (size1_polyC lt_sp_1) => ->.
-  by rewrite derivC size_poly0 size_polyC ; case: (_ != _).
-rewrite size_poly_eq // !prednK ; last first.
-  move: (ltn_predK le_sp_1) => H.
-  by move: le_sp_1 ; rewrite -{1}H -[X in _ < X]add1n -add1n leq_add2l.
-rewrite -mulr_natr mulf_eq0 ; apply/norP ; split.
-  by rewrite -lead_coefE lead_coef_eq0 -size_poly_gt0 (ltn_trans _ le_sp_1).
-move: (charf0P K) => char_K_property.
-move/char_K_property : char_K_is_zero => char_K.
-rewrite char_K -lt0n.
-move: (ltn_predK le_sp_1) => H.
-by move: le_sp_1 ; rewrite -{1}H -[X in _ < X]add1n -add1n leq_add2l.
 Qed.
 
 Fact prim_tfps_is_linear : linear (@prim_tfps n).
@@ -1209,7 +1267,7 @@ Local Notation "f \So g" := (comp_tfps g f) (at level 2) : tfps_scope.
 
 Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : tfps_scope.
 
-Lemma deriv_tfps_comp (K : fieldType )(m : nat) (f g : {tfps K m}): 
+Lemma deriv_tfps_comp (K : fieldType) (m : nat) (f g : {tfps K m}): 
   f \in (@coef0_is_0 K m) ->
   deriv_tfps (g \So f) = (g ^`() \So (Tfpsp m.-1 f)) * f^`()%tfps.
 Proof.
@@ -1429,18 +1487,153 @@ Qed.
 
 End Exponential.
 
-Section RevSeries.
+Section MoreExponential.
 
-Variable (K : fieldType) (n : nat).
+Variable (K : fieldType).
 
-Definition rev_tfps (m : nat) (p : {tfps K n}) := 
-  Tfpsp m (revp p). 
+Local Notation "f ^` ()" := (deriv_tfps f) (at level 8) : ring_scope. 
 
-Lemma rev_tfps_unit (m : nat) (p : {tfps K n}) : p != 0 -> 
-  (rev_tfps m p) \is a GRing.unit.
-Proof. 
-move: p => [ [s pr1] pr2 ] Hpneq0.
-by rewrite unit_tfpsE nth0_Tfpsp coef0_revp lead_coef_eq0 Hpneq0. 
+Lemma deriv_tfps_exp (m : nat) (f : {tfps K m}) (n : nat) :
+    (f ^+ n)^` () = f^` () * (Tfpsp m.-1 f) ^+ n.-1 *+ n.
+Proof.
+elim: n => /= [|n IHn]; first by rewrite expr0 mulr0n onefE deriv_tfpsC.
+rewrite exprS deriv_tfpsM {}IHn (mulrC (_ f)) val_exp_tfps /=.
+rewrite mulrC -mulrnAr mulrCA -mulrDr -mulrnAr; congr (_ * _).
+rewrite Tfpsp_modp; last by clear f; case: m.
+rewrite rmorphX /= mulrnAr -exprS; case: n => /= [|n]; rewrite -?mulrS //.
+by rewrite !expr0 mulr0n addr0.
 Qed.
 
-End RevSeries.
+Hypothesis char_K_is_zero : [char K] =i pred0.
+Hint Resolve char_K_is_zero.
+
+Lemma deriv_exp (m : nat) (p : {tfps K m}) : 
+  (exp p)^` () = (p^` ()) * (Tfpsp m.-1 (exp p)).
+Proof.
+move: p ; case: m => /= [p | n p]. 
+  by rewrite [p]tfps_is_cst deriv_tfpsC mul0r expC deriv_tfpsC.
+have [p0_eq0 | p0_neq0] := boolP (p \in (@coef0_is_0 K n.+1)) ; last first.
+  by rewrite exp_coef0_isnt_0 // deriv_tfps0 rmorph0 mulr0.
+rewrite !exp_coef0_is_0 //= !deriv_tfpsE //=; apply/val_inj => /=.
+rewrite deriv_modp modp_modp ?dvdp_exp2l // modp_modp ?dvdp_exp2l //.
+rewrite deriv_sum -(big_mkord predT (fun i => i`!%:R^-1 *: _  ^+ i)) /=.
+rewrite big_nat_recr //= modp_add modp_scalel.
+rewrite modX_eq0 //; last by apply/eqP; rewrite -coef0_is_0E.
+rewrite scaler0 addr0 modp_mul modp_mul2 mulr_sumr.
+rewrite -(big_mkord predT (fun i => deriv (i`!%:R^-1 *: (val p) ^+ i))) /=.
+rewrite big_nat_recl // expr0 linearZ /= derivC scaler0 add0r.
+congr (_ %% _); apply: eq_bigr => i _.
+rewrite linearZ /= deriv_exp /= -scalerCA -scaler_nat.
+rewrite scalerA -scalerAl; congr (_ *: _).
+rewrite factS natrM /= invrM ?unitfE ?natmul_inj // -?lt0n ?fact_gt0 //.
+rewrite -mulrA [X in _ * X]mulrC.
+by rewrite divff ?natmul_inj // -?lt0n ?fact_gt0 // mulr1.
+Qed.
+
+Lemma deriv_log (m : nat) (f : {tfps K m}) : 
+       f \in (@coef0_is_1 K m) -> (log f) ^` () = (f )^` () / (Tfpsp m.-1 f).
+Proof.
+move: f; case: m => [|m]; move => f.
+rewrite [f]tfps_is_cst coef0_is_1E nth0_Tfpsp coefC eqxx => /eqP ->.
+by rewrite !deriv_Tfps0p mul0r.
+move => f0_is_1.
+rewrite log_coef0_is_1 // rmorphN rmorph_sum linearN raddf_sum -sumrN. 
+rewrite big_nat.
+rewrite (eq_bigr (fun i => (f )^` () * ((1 - (Tfpsp m f)) ^+ i.-1))) => 
+                                                  [|i /andP [hi _]]; last first.
++ rewrite linearZ rmorphX /= deriv_tfpsZ rmorphB rmorph1 deriv_tfps_exp. 
+  rewrite linearB rmorphB rmorph1 onefE /= deriv_tfpsC sub0r /= Tfpsp_modp //.
+  rewrite -scaler_nat scalerA mulrC divff ?natmul_inj //-?lt0n // scale1r mulNr.
+  rewrite  opprK; congr (_ * _); apply/val_inj => /=.
+  by rewrite modp_small // size_polyXn ltnS size_tfps.
++ rewrite -big_nat /= -mulr_sumr big_add1 /= big_mkord; congr (_ * _).
+  have trp_unit : Tfpsp m f \is a GRing.unit.
+    rewrite Tfpsp_is_unit.
+    by move: f0_is_1 ; rewrite coef0_is_1E => /eqP -> ; rewrite oner_eq0.
+  apply: (mulrI trp_unit); rewrite divrr //.
+  rewrite -[X in X * _]opprK -[X in X * _]add0r -{1}(subrr 1).
+  rewrite -addrA -linearB /= -[X in X * _]opprB mulNr -subrX1 opprB /=.
+  apply/val_inj => /=.
+  rewrite val_exp_tfps modX_eq0 ?subr0 // coefB coef1 eqxx.
+  rewrite coef0_is_1E in f0_is_1.
+  rewrite nth0_Tfpsp; move/eqP : f0_is_1 ->.
+  by rewrite subrr.
+Qed.
+
+Lemma cancel_log_exp (m : nat) : 
+    {in @coef0_is_0 K m, cancel (@exp K m) (@log K m)}.
+Proof.
+move => f f0_eq0 /=.
+  apply/eqP ; rewrite -subr_eq0 ; apply/eqP.
+  apply: (pw_eq0 char_K_is_zero).
+- rewrite linearB /= deriv_log ?coef0_is_1E ?coef0_exp //.
+  rewrite deriv_exp -mulrA divrr ?mulr1 ?subrr // Tfpsp_is_unit.
+  by rewrite coef0_exp //; apply: oner_neq0.
+- exists 0; rewrite -horner_evalE rmorphB /= !horner_evalE !horner_coef0.
+  by rewrite coef0_log sub0r; apply/eqP; rewrite oppr_eq0 -coef0_is_0E.
+Qed.
+
+Lemma exp_inj (m : nat) : {in @coef0_is_0 K m &, injective (@exp K m)}.
+Proof.
+move => p q p0_eq0 q0_eq0 /= H.
+have : p^`()%tfps * (Tfpsp m.-1 (exp p)) = q^`()%tfps * (Tfpsp m.-1 (exp p)).
+  by rewrite {2}H -!deriv_exp H.
+move/mulIr => H_deriv; apply: pw_eq => //.
++ apply: H_deriv.
+  by rewrite Tfpsp_is_unit coef0_exp // oner_neq0.
++ exists 0 ; rewrite !horner_coef0.
+  by move: p0_eq0 q0_eq0 ; rewrite !coef0_is_0E => /eqP -> /eqP ->.
+Qed.
+
+Lemma log_inj (m : nat) : {in @coef0_is_1 K m &, injective (@log K m)}.
+Proof.
+move => p q p0_eq0 q0_eq0 /= Hlog.
+have H: (p/q) ^` () = 0.
+  rewrite deriv_div_tfps; last first.
+    by move: q0_eq0; rewrite coef0_is_1E => /eqP ->; apply: oner_neq0.
+  have -> : p^`()%tfps * Tfpsp m.-1 q - Tfpsp m.-1 p * q^`()%tfps = 0 ; 
+    last by rewrite mul0r.
+  apply/eqP; rewrite subr_eq0 [Tfpsp m.-1 p * q^`()%tfps]mulrC.
+  rewrite -eq_divr ?Tfpsp_is_unit ; last 2 first.
+      by move: p0_eq0; rewrite coef0_is_1E => /eqP ->; apply: oner_neq0.
+      by move: q0_eq0; rewrite coef0_is_1E => /eqP ->; apply: oner_neq0.
+  by move/(congr1 (@deriv_tfps K m)) : Hlog; rewrite !deriv_log // => ->.
+move: (pw_cst char_K_is_zero H) => [c Hpq].
+have Hc : c = 1.
+  move/(congr1 (fun x => x * q)): Hpq.
+  rewrite mulrAC -mulrA divrr ; last first.
+    rewrite unit_tfpsE.
+    rewrite coef0_is_1E in q0_eq0.
+    by move/eqP: q0_eq0 ->; apply: oner_neq0.
+  rewrite mulr1; move/val_eqP => /=.
+  rewrite modCXn // modp_small; last first.
+    rewrite mul_polyC (leq_ltn_trans (size_scale_leq _ _)) //.
+    by rewrite size_polyXn; apply: size_tfps.
+  move/eqP; move/(congr1 (fun x => x.[0])).
+  rewrite !horner_coef0 coef0M.
+  move: p0_eq0; rewrite coef0_is_1E => /eqP ->.
+  move: q0_eq0; rewrite coef0_is_1E => /eqP ->.
+  by rewrite coefC eqxx mulr1.
+move: Hpq; rewrite Hc; move/(congr1 (fun x => x * q)).
+rewrite mulrAC -mulrA divrr ; last first.
+  rewrite unit_tfpsE.
+  rewrite coef0_is_1E in q0_eq0.
+  by move/eqP: q0_eq0 ->; apply: oner_neq0.
+rewrite mulr1; move/val_eqP => /=.
+rewrite modp_mul2 mul1r modp_small //; last first.
+  by rewrite size_polyXn; apply: size_tfps.
+by move/eqP => H2; apply/val_inj.
+Qed.
+
+Lemma cancel_exp_log (m : nat) : {in @coef0_is_1 K m, cancel (@log K m) (@exp K m)}.
+Proof.
+move => p p0_eq1 /=.
+apply: log_inj => //.
+  rewrite coef0_is_1E.
+  apply/eqP; rewrite coef0_exp //.
+  by rewrite coef0_is_0E; apply/eqP; rewrite coef0_log.
+by rewrite cancel_log_exp // coef0_is_0E coef0_log.
+Qed.
+
+End MoreExponential.
+

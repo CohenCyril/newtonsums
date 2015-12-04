@@ -1,6 +1,8 @@
 auxresults.v
-fraction.v
+valuation.v
 revpoly.v
+fraction.v
+fracrev.v
 xseq.v
 polyorder.v
 polyall.v
