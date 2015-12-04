@@ -19,6 +19,18 @@ Import GRing.Theory.
 Local Open Scope ring_scope.
 Local Open Scope quotient_scope.
 
+Delimit Scope tfps_scope with tfps.
+
+Reserved Notation "{ 'tfps' K n }"
+         (at level 0, K at next level, format "{ 'tfps'  K  n }").
+Reserved Notation "[ 'tfps' s <= n => F ]"
+  (at level 0, n at next level, s ident, format "[ 'tfps' s <= n  =>  F ]").
+Reserved Notation "[ 'tfps' s => F ]"
+  (at level 0, s ident, format "[ 'tfps'  s  =>  F ]").
+Reserved Notation "c %:S" (at level 2).
+Reserved Notation "f *h g" (at level 2).
+Reserved Notation "f ^` ()" (at level 8).
+
 Local Notation "p ^ f" := (map_poly f p).
 
 Section MorePolyTheory.
@@ -210,14 +222,21 @@ Definition Tfpsp (p : {poly K}) := Tfps_of (leq_modpXn _ p).
 
 Definition tfps_of_fun (f : nat -> K) := Tfps_of (size_poly _ f).
 
-Local Notation "[ 'tfps' s => F ]" := (tfps_of_fun (fun s => F))
-  (at level 0, s ident, only parsing).
+End TruncatedPowerSeries.
 
-Implicit Types (f g : {tfps}).
+Section TruncatedPowerSeriesTheory.
+
+Variables (K : fieldType) (n : nat).
+
+Local Notation "{ 'tfps' K n }" := (tfps_of n (Phant K)).
+Local Notation tfps := {tfps K n}.
+Local Notation "[ 'tfps' s <= n => F ]" := (tfps_of_fun n (fun s => F)).
+Local Notation "[ 'tfps' s => F ]" := [tfps s <= n => F].
+
+Implicit Types (f g : tfps).
 
 Lemma size_tfps f : size (val f) <= n.+1.
 Proof. by case: f. Qed.
-Hint Resolve size_tfps.
 
 Fact mod_tfps (m : nat) f : n <= m -> f %% 'X^m.+1 = (val f).
 Proof.
@@ -226,7 +245,7 @@ by rewrite modp_small // size_polyXn ltnS (leq_trans (size_tfps _)).
 Qed.
 
 Lemma tfps_nth_default f j : j > n ->  f`_j = 0.
-Proof. by move=> j_big; rewrite nth_default // (leq_trans _ j_big). Qed.
+Proof. by move=> j_big; rewrite nth_default // (leq_trans _ j_big) ?size_tfps. Qed.
 
 Lemma tfps_coefK f : [tfps s => f`_s] = f.
 Proof.
@@ -238,15 +257,14 @@ Lemma coef_tfps s (f : nat -> K) :
   [tfps s => f s]`_s = if s <= n then f s else 0.
 Proof. by rewrite coef_poly. Qed.
 
-Lemma eq_tfps (f g : {tfps}) :
-  (forall i : 'I_n.+1, f`_i = g`_i) <-> (f = g).
+Lemma eq_tfps f g : (forall i : 'I_n.+1, f`_i = g`_i) <-> (f = g).
 Proof.
 split=> [eq_s|-> //]; apply/val_inj/polyP => i /=.
 have [i_small|i_big] := ltnP i n.+1; first by rewrite (eq_s (Ordinal i_small)).
 by rewrite -[f]tfps_coefK -[g]tfps_coefK !coef_tfps leqNgt i_big.
 Qed.
 
-Lemma nth0_Tfpsp (p : {poly K}) : (Tfpsp p)`_0 = p`_0.
+Lemma nth0_Tfpsp (p : {poly K}) : (Tfpsp n p)`_0 = p`_0.
 Proof. by rewrite coef_modXn ltn0Sn. Qed.
 
 (* zmodType structure *)
@@ -263,7 +281,7 @@ Proof. by rewrite (leq_trans (size_add _ _)) // geq_max !size_tfps. Qed.
 Definition add_tfps f g := Tfps_of (add_tfps_subproof f g).
 
 Lemma opp_tfps_proof f : size (- val f) <= n.+1.
-Proof. by rewrite size_opp. Qed.
+Proof. by rewrite size_opp ?size_tfps. Qed.
 
 Definition opp_tfps f := Tfps_of (opp_tfps_proof f).
 
@@ -281,9 +299,9 @@ Proof. by move => f; apply/val_inj; apply: addNr. Qed.
 
 Definition tfps_zmodMixin :=
                               ZmodMixin add_tfpsA add_tfpsC add_tfps0f add_tfpsK.
-Canonical tfps_zmodType := ZmodType {tfps} tfps_zmodMixin.
+Canonical tfps_zmodType := ZmodType tfps tfps_zmodMixin.
 
-Lemma Tfpsp0 : Tfpsp 0 = 0.
+Lemma Tfpsp0 : Tfpsp n 0 = 0.
 Proof. by apply/val_inj => /=; rewrite mod0p. Qed.
 
 (* ringType structure *)
@@ -291,11 +309,13 @@ Proof. by apply/val_inj => /=; rewrite mod0p. Qed.
 Fact one_tfps_proof : size (1 : {poly K}) <= n.+1.
 Proof. by rewrite size_polyC (leq_trans (leq_b1 _)). Qed.
 
-Definition one_tfps : {tfps} := Tfps_of one_tfps_proof.
+Definition one_tfps : tfps := Tfps_of one_tfps_proof.
 
-Definition mul_tfps f g := Tfpsp (val f * val g).
+Definition mul_tfps f g := Tfpsp n (val f * val g).
 
 Definition hmul_tfps f g := [tfps j => f`_j * g`_j].
+
+Definition deriv_tfps f : {tfps K n.-1} := [tfps s <= n.-1 => f`_s.+1 *+ s.+1]. 
 
 Local Notation "f *h g" := (hmul_tfps f g) (at level 2).
 
@@ -321,7 +341,7 @@ Proof. by rewrite hmul_tfpsC hmul_tfps0r. Qed.
 Fact left_id_one_mul_tfps : left_id one_tfps mul_tfps.
 Proof.
 move=> p; apply val_inj; rewrite /= mul1r.
-by rewrite modp_small // size_polyXn ltnS.
+by rewrite modp_small // size_polyXn ltnS ?size_tfps.
 Qed.
 
 Fact mul_tfpsC : commutative mul_tfps.
@@ -342,13 +362,12 @@ Proof. by rewrite -val_eqE oner_neq0. Qed.
 Definition tfps_ringMixin := ComRingMixin mul_tfpsA mul_tfpsC
                left_id_one_mul_tfps left_distributive_mul_tfps one_tfps_not_zero.
 
-Canonical tfps_ringType := RingType {tfps} tfps_ringMixin.
-
-Canonical tfps_comRingType := ComRingType {tfps} mul_tfpsC.
+Canonical tfps_ringType := RingType tfps tfps_ringMixin.
+Canonical tfps_comRingType := ComRingType tfps mul_tfpsC.
 
 (* comUnitRingType structure *)
 
-Lemma coef_Tfpsp p s : (Tfpsp p)`_s = if s <= n then p`_s else 0.
+Lemma coef_Tfpsp (p : {poly K}) s : (Tfpsp n p)`_s = if s <= n then p`_s else 0.
 Proof. by rewrite coef_modXn. Qed.
 
 Fixpoint coef_inv_rec (p : {poly K}) (m i : nat) : K :=
@@ -382,7 +401,7 @@ rewrite /coef_inv /= -lock; congr (_ * _) ; apply: eq_bigr => k _.
 by rewrite coef_inv_recE // leq_ord.
 Qed.
 
-Definition unit_tfps : pred {tfps} := fun f => (f`_0 \in GRing.unit).
+Definition unit_tfps : pred tfps := fun f => (f`_0 \in GRing.unit).
 
 Definition inv_tfps f :=
     if f \in unit_tfps then [tfps s => coef_inv f s] else f.
@@ -430,7 +449,7 @@ Qed.
 Definition tfps_comUnitRingMixin := ComUnitRingMixin
   tfps_mulVr unit_tfpsP nonunit_inv_tfps.
 
-Canonical unit_tfpsRingType := UnitRingType {tfps} tfps_comUnitRingMixin.
+Canonical unit_tfpsRingType := UnitRingType tfps tfps_comUnitRingMixin.
 
 Lemma coef_inv_tfps f i : f \is a GRing.unit -> f^-1`_i =
   if i > n then 0 else
@@ -448,16 +467,16 @@ elim: m => [|m ihm] //=; first by rewrite expr0 modCXn.
 by rewrite exprS /= ihm modp_mul -exprS.
 Qed.
 
-Lemma hmul_tfpsr1 f : f *h 1 = Tfpsp (f`_0)%:P.
+Lemma hmul_tfpsr1 f : f *h 1 = Tfpsp n (f`_0)%:P.
 Proof.
 apply/val_inj/polyP => s; rewrite coef_tfps coef_Tfpsp !coefC.
 by case: s => [|s]; rewrite ?mulr1 ?mulr0.
 Qed.
 
-Lemma hmul_tfps1r f : 1 *h f = Tfpsp (f`_0)%:P.
+Lemma hmul_tfps1r f : 1 *h f = Tfpsp n (f`_0)%:P.
 Proof. by rewrite hmul_tfpsC hmul_tfpsr1. Qed.
 
-Canonical tfps_comUnitRingType := [comUnitRingType of {tfps}].
+Canonical tfps_comUnitRingType := [comUnitRingType of tfps].
 
 Lemma unit_tfpsE f : (f \in GRing.unit) = (f`_0 != 0).
 Proof. by rewrite qualifE /= /unit_tfps unitfE. Qed.
@@ -472,7 +491,7 @@ move=> fNunit; have := fNunit; rewrite -unitrV; move: fNunit.
 by rewrite !unit_tfpsE !negbK => /eqP -> /eqP ->; rewrite invr0.
 Qed.
 
-Definition scale_tfps (c : K) f := Tfpsp (c *: (val f)).
+Definition scale_tfps (c : K) f := Tfpsp n (c *: (val f)).
 
 Fact scale_tfpsA a b f : scale_tfps a (scale_tfps b f) = scale_tfps (a * b) f.
 Proof. 
@@ -482,7 +501,7 @@ Qed.
 Fact scale_1tfps : left_id (1 : K) scale_tfps.
 Proof.
 move=> x; apply/val_inj => /=.
-by rewrite scale1r modp_small // size_polyXn ltnS.
+by rewrite scale1r modp_small // size_polyXn ltnS ?size_tfps.
 Qed.
 
 Fact scale_tfpsDl f: {morph scale_tfps^~ f : a b / a + b}.
@@ -504,34 +523,31 @@ Qed.
 Definition tfps_lmodMixin := LmodMixin scale_tfpsA scale_1tfps 
                                                        scale_tfpsDr scale_tfpsDl.
 
-Canonical tfps_lmodType := Eval hnf in LmodType K {tfps} tfps_lmodMixin.
+Canonical tfps_lmodType := Eval hnf in LmodType K tfps tfps_lmodMixin.
+Canonical tfps_lalgType := Eval hnf in LalgType K tfps scale_tfpsAl.
+Canonical tfps_algType := CommAlgType K tfps.
+Canonical unit_tfpsAlgType := Eval hnf in [unitAlgType K of tfps].
 
-Canonical tfps_lalgType := Eval hnf in LalgType K {tfps} scale_tfpsAl.
-
-Canonical tfps_algType := CommAlgType K {tfps}.
-
-Canonical unit_tfpsAlgType := Eval hnf in [unitAlgType K of {tfps}].
-
-Local Notation "c %:S" := (Tfpsp (c %:P)) (at level 2).
+Local Notation "c %:S" := (Tfpsp _ (c %:P)) (at level 2).
 
 Fact onefE : 1 = 1 %:S.
 Proof. by apply/val_inj => /=; rewrite modCXn. Qed.
 
-End TruncatedPowerSeries.
+End TruncatedPowerSeriesTheory.
 
-Module Exports.
+Module Notations.
 
-Delimit Scope tfps_scope with tfps.
+Local Open Scope tfps_scope.
 
-Notation "{ 'tfps' K n }" := (tfps_of n (Phant K)) 
-    (at level 0, K at next level) : tfps_scope.
-Notation "[ 'tfps' s => F ]" := (tfps_of_fun _ (fun s => F))
-  (at level 0, s ident, only parsing) : tfps_scope.
+Notation "{ 'tfps' K n }" := (tfps_of n (Phant K)) : tfps_scope.
+Notation "[ 'tfps' s <= n => F ]" := (tfps_of_fun n (fun s => F)) : tfps_scope.
+Notation "[ 'tfps' s => F ]" := [tfps s <= _ => F] : tfps_scope.
 Notation "c %:S" := (Tfpsp _ (c %:P)) (at level 2) : tfps_scope.
 Notation "f *h g" := (hmul_tfps f g) (at level 2) : tfps_scope.
+Notation "f ^` () " := (deriv_tfps f) (at level 8) : tfps_scope.
 
-End Exports. 
-Export Exports.
+End Notations. 
+Import Notations.
 
 Local Open Scope tfps_scope.
 
@@ -813,9 +829,6 @@ Section Derivative.
 
 Variables (K : fieldType) (n : nat).
 
-Definition deriv_tfps : {tfps K n} -> {tfps K n.-1} :=
-    fun f => [tfps s => f`_s.+1 *+ s.+1]. 
-
 (* can be generalized with R ? *)
 Lemma deriv_modp (p : {poly K}) :
     ((p %% 'X ^+ n.+1)^`() = (p ^`()) %% 'X ^+ n)%R.
@@ -848,7 +861,7 @@ Proof.
 by apply/val_inj; apply/polyP => i; rewrite coef_poly coef_modXn coef_deriv. 
 Qed.
 
-Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : ring_scope.
+Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : tfps_scope.
 
 Fact deriv_tfps0 : (0 : {tfps K n}) ^`() = 0.
 Proof.
@@ -866,25 +879,13 @@ rewrite coef_poly coefC if_same polyseqC.
 by case: (_ < _) => //; case: (_ == _); rewrite /= ?nth_nil mul0rn.
 Qed. 
 
-Fact deriv_tfpsD (f g : {tfps K n}) : (f + g)^`() = f^`() + g^`().
+Fact deriv_tfpsD (f g : {tfps K n}) : (f + g)^`() = f^`()%tfps + g^`()%tfps.
 Proof.
 apply/val_inj; apply/polyP => i; rewrite coefD !coef_poly coefD.
 by case: (_ < _) => //=; rewrite ?addr0 // -mulrnDl.
 Qed.
 
-Fact deriv_tfpsN (f : {tfps K n}) : (- f)^`() = - (f^`()).
-Proof.
-apply/val_inj; apply/polyP => i; rewrite coefN !coef_poly.
-by case: (_ < _) => //; rewrite ?oppr0 //; rewrite -mulNrn coefN.
-Qed.
-
-Fact deriv_tfpsB (f g : {tfps K n}) : (f - g)^`() = f ^`() - g ^`().
-Proof.
-apply/val_inj; apply/polyP => i; rewrite coefB !coef_poly coefB.
-by case: (_ < _) => //=; rewrite ?subr0 // -mulrnBl.
-Qed.
-
-Fact deriv_tfpsZ (c : K) (f : {tfps K n}) : (c *: f) ^`() = c *: (f ^`()).
+Fact deriv_tfpsZ (c : K) (f : {tfps K n}) : (c *: f) ^`() = c *: f ^`()%tfps.
 Proof.
 apply/val_inj; apply/polyP => i.
 rewrite coef_poly coef_modXn !coefZ coef_modXn !coefZ coef_poly.
@@ -894,26 +895,18 @@ move: f; case: n => [p|m p]; last by congr if_expr; rewrite mulrnAr.
 by rewrite [p]tfps_is_cst coef_Tfpsp mul0rn mulr0 if_same.
 Qed.
 
-Fact deriv_tfps_is_linear : linear deriv_tfps.
+Fact deriv_tfps_is_linear : linear (@deriv_tfps K n).
 Proof. by move => c f g; rewrite deriv_tfpsD deriv_tfpsZ. Qed.
 
 Canonical deriv_tfps_additive := Additive deriv_tfps_is_linear. 
 Canonical deriv_tfps_linear := Linear deriv_tfps_is_linear.
 
-Print Canonical Projections.
-
-(* tests *)
-Let test_deriv_tfps0 : 0 ^`() = 0.
-Proof. by rewrite linear0. Qed. 
-
 End Derivative.
 
 Section MoreDerivative.
 
-Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : ring_scope. 
-
 Lemma deriv_tfpsM (K : fieldType) (n : nat) (f g : {tfps K n}) :
-            (f * g) ^`() = (f ^`()) * (Tfpsp n.-1 g) + (Tfpsp n.-1 f) * (g ^`()).
+   (f * g) ^`() = f ^`()%tfps * (Tfpsp n.-1 g) + (Tfpsp n.-1 f) * g ^`()%tfps.
 Proof.
 move : f g; case: n => /= [f g | m f g].
   rewrite [f]tfps_is_cst [g]tfps_is_cst -tfpsC_mul !deriv_tfpsC mul0r mulr0.
@@ -924,8 +917,7 @@ by rewrite !modp_mul; congr (_ + _); rewrite mulrC [in RHS]mulrC modp_mul.
 Qed.
 
 Fact TfpsVf m (K :fieldType) n (f : {tfps K n}) :
-  m <= n ->
-  Tfpsp m (f^-1) = (Tfpsp m f) ^-1.
+  m <= n -> Tfpsp m (f^-1) = (Tfpsp m f) ^-1.
 Proof.
 move=> leq_mn.
 have [/eqP p0_eq0|p0_neq0] := eqVneq f`_0 0.
@@ -938,7 +930,7 @@ Qed.
 
 Lemma deriv_tfpsV (K :fieldType) (n : nat) (f : {tfps K n}) :
   f \notin (@coef0_is_0 _ _) ->
-  (f ^-1) ^`() = - (f ^`()) / (Tfpsp n.-1 (f ^+ 2)).
+  (f ^-1) ^`() = - f ^`()%tfps / Tfpsp n.-1 (f ^+ 2).
 Proof.
 move => p0_neq0.
 move/eqP: (eq_refl (f / f)).
@@ -958,7 +950,7 @@ Qed.
                                                              
 Lemma deriv_div_tfps (K :fieldType) (n : nat) (f g : {tfps K n}) :
   g`_0 != 0 ->
-  (f / g) ^`() = (f ^`() * Tfpsp n.-1 g - Tfpsp n.-1 f * g ^`())
+  (f / g) ^`() = (f^`()%tfps * Tfpsp n.-1 g - Tfpsp n.-1 f * g ^`()%tfps)
                                                     / (Tfpsp n.-1 (g ^+ 2)).
 Proof.
 move => g0_neq0.
@@ -1083,7 +1075,7 @@ case: (_ < _); last by rewrite mul0rn.
 by rewrite eqn0Ngt ltn0Sn -mulr_natr mulrAC -mulrA divff ?natmul_inj // mulr1.
 Qed.
 
-Fact size_deriv (p : {poly K}) : size (p ^`()) = (size p).-1.
+Fact size_deriv (p : {poly K}) : size (p ^`()%R) = (size p).-1.
 Proof.
 have [lt_sp_1 | le_sp_1] := ltnP (size p) 2.
   move: (size1_polyC lt_sp_1) => ->.
@@ -1215,11 +1207,11 @@ Section MoreComposition.
 
 Local Notation "f \So g" := (comp_tfps g f) (at level 2) : tfps_scope.
 
-Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : ring_scope.
+Local Notation "f ^` () " := (deriv_tfps f) (at level 8) : tfps_scope.
 
 Lemma deriv_tfps_comp (K : fieldType )(m : nat) (f g : {tfps K m}): 
   f \in (@coef0_is_0 K m) ->
-  deriv_tfps (g \So f) = (g ^`() \So (Tfpsp m.-1 f)) * f ^`().
+  deriv_tfps (g \So f) = (g ^`() \So (Tfpsp m.-1 f)) * f^`()%tfps.
 Proof.
 rewrite !deriv_tfpsE //.
 move: f g; case: m => [f g g0_eq0| m f g g0_eq0].
