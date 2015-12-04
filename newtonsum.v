@@ -452,7 +452,7 @@ Lemma irootsC c : iroots c%:P = [::].
 Proof. by rewrite /iroots map_polyC rootsC. Qed.
 
 Lemma iroots0 : iroots 0 = [::]. Proof. by rewrite irootsC. Qed.
-Print Visibility.
+
 Fact factorization (p : {poly K}) : p ^ iota = 
 (iota (lead_coef p)) *: \prod_(r <- iroots p) ('X - r%:P).
 Proof. by rewrite (roots_factor_theorem_f (p ^ iota)) lead_coef_map. Qed.
@@ -1098,7 +1098,8 @@ End Conversion.
 Section MoreConversion.
 
 Variables (K : fieldType) (L : closedFieldType) (iota : {injmorphism K -> L}).
-Variable (m : nat).
+Variable (m' : nat).
+Let m := m'.+1.
 
 Hypothesis char_L_is_zero : [char L] =i pred0.
 
@@ -1106,11 +1107,11 @@ Hint Resolve char_L_is_zero.
 Hint Resolve (char_K_is_zero iota char_L_is_zero).
 
 Fact aux_conversion4 (p : {poly K}) : ~~ root p 0 ->
-  Tfpsfp m ((revp p)^`() // revp p)
-  = divfX (((size p).-1)%:R%:S - (newton_tfps m.+1 p)).
+  Tfpsfp m' ((revp p)^`() // revp p)
+  = divfX (((size p).-1)%:R%:S - (newton_tfps m p)).
 Proof.
-move => zeroNroot; apply: (@map_tfps_injective _ _ m iota).
-rewrite mapf_Tfpsfp aux_conversion2 // (@map_tfps_divfX _ _ iota m.+1).
+move => zeroNroot; apply: (@map_tfps_injective _ _ m' iota).
+rewrite mapf_Tfpsfp aux_conversion2 // (@map_tfps_divfX _ _ iota m).
 rewrite divfXE; last first.
   rewrite coef0_is_0E -map_poly_tfps coef_map coefB nth0_Tfpsp //.
   by rewrite (newton_tfps_coef0 iota) // coefC /= subrr rmorph0.
@@ -1122,9 +1123,9 @@ rewrite ltnS ltn_ord map_modp map_polyXn modp_mod modp_small; last first.
 by rewrite coef_map coefC /= rmorph0 sub0r /iroots map_poly_id.
 Qed.
 
-Lemma exp_prim_derivp_over_p (s : {tfps K m.+1}) :
-  s \in (@coef0_is_1 K m.+1) ->
-  s = exp (prim_tfps ((s^`()%tfps) / (Tfpsp m s)))%tfps.
+Lemma exp_prim_derivp_over_p (s : {tfps K m}) :
+  s \in (@coef0_is_1 K m) ->
+  s = exp (prim_tfps ((s^`()%tfps) / (Tfpsp m' s)))%tfps.
 Proof.
 move => s0_eq1; apply: log_inj => //.
   by rewrite coef0_is_1E coef0_exp // coef0_is_0E coef0_prim_tfps.
@@ -1134,17 +1135,17 @@ apply: pw_eq => //; last first.
 by rewrite deriv_log // prim_tfpsK.
 Qed.
 
-Definition newton_inv (p : {tfps K m.+1}) : {poly K} := 
+Definition newton_inv (p : {tfps K m}) : {poly K} := 
   revp (exp (prim_tfps (divfX ((p`_0)%:S - p)))).
 
 Lemma newton_tfpsK (p : {poly K}) :
-  size p <= m.+2 ->  ~~ (root p 0) -> p \is monic ->
-  newton_inv (newton_tfps m.+1 p) = p.
+  size p <= m.+1 ->  ~~ (root p 0) -> p \is monic ->
+  newton_inv (newton_tfps m p) = p.
 Proof.
 move => sp_lt_Sm Nrootp0 p_monic; rewrite /newton_inv.
 apply: (canLR_in (@revp_involutive _)).
   by rewrite qualifE -horner_coef0.
-have -> : revp p = Tfpsp m.+1 (revp p).
+have -> : revp p = Tfpsp m (revp p).
   apply: val_inj => /=; rewrite modp_small //= size_polyXn ltnS.
   by rewrite (leq_trans (size_revp_leq _)).
 rewrite [Tfpsp _ _ in RHS]exp_prim_derivp_over_p; last first.
