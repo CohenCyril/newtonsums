@@ -1,5 +1,8 @@
 # newtonsums
-Newton series transformation
+Newton series transformation destined to perform composed sums and products of polynomials in a fast way.
+There is still a lot of polishing and documentation missing before it can be stable.
+Please use with caution.
+
 
 The following files are copied from Pierre Yves Strub development on elliptic curves, in order to support decomposition of polynomials in a decidable field:
 xseq
