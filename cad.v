@@ -19,7 +19,7 @@ Import ord.
 
 Local Open Scope nat_scope.
 Local Open Scope ring_scope. 
-Open Local Scope quotient_scope.
+Local Open Scope quotient_scope.
 
 Section EqFormula.
 

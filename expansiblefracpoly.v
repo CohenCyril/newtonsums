@@ -24,7 +24,7 @@ Unset Printing Implicit Defensive.
 
 Import GRing.Theory.
 Local Open Scope ring_scope.
-Open Local Scope quotient_scope.
+Local Open Scope quotient_scope.
 
 Section ExpansibleFracpoly.
 
