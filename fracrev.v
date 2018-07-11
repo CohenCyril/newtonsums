@@ -13,8 +13,8 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Import GRing.Theory.
-Open Local Scope ring_scope.
-Open Local Scope quotient_scope.
+Local Open Scope ring_scope.
+Local Open Scope quotient_scope.
 
 Reserved Notation "{ 'fracpoly' T }" (at level 0, format "{ 'fracpoly'  T }").
 Reserved Notation "x %:F" (at level 2, format "x %:F").

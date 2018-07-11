@@ -14,7 +14,7 @@ Require Import xseq polyorder polyall.
 
 Import GRing.Theory.
 
-Open Local Scope ring_scope.
+Local Open Scope ring_scope.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
