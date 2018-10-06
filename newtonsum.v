@@ -179,21 +179,21 @@ End NewtonRepresentation.
 
 Section Newton.
 
-Variables (K : fieldType) (L : closedFieldType) (iota : {injmorphism K -> L}).
+Variables (K : fieldType) (L : closedFieldType) (f : {injmorphism K -> L}).
 
-Definition iroots (p : {poly K}) := roots (p ^ iota).
+Definition iroots (p : {poly K}) := roots (p ^ f).
 
 Fact irootsC c : iroots c%:P = [::].
 Proof. by rewrite /iroots map_polyC rootsC. Qed.
 
 Fact iroots0 : iroots 0 = [::]. Proof. by rewrite irootsC. Qed.
 
-Fact factorization (p : {poly K}) : p ^ iota = 
-(iota (lead_coef p)) *: \prod_(r <- iroots p) ('X - r%:P).
-Proof. by rewrite (roots_factor_theorem_f (p ^ iota)) lead_coef_map. Qed.
+Fact factorization (p : {poly K}) : p ^ f = 
+(f (lead_coef p)) *: \prod_(r <- iroots p) ('X - r%:P).
+Proof. by rewrite (roots_factor_theorem_f (p ^ f)) lead_coef_map. Qed.
 
-Fact coef0_iroots (p : {poly K}) : iota p`_0 = 
-  (iota (lead_coef p)) * (\prod_(r <- iroots p) -r).
+Fact coef0_iroots (p : {poly K}) : f p`_0 = 
+  (f (lead_coef p)) * (\prod_(r <- iroots p) -r).
 Proof.
 rewrite -coef_map_id0 ; last exact: rmorph0.
 rewrite factorization -horner_coef0 -horner_evalE linearZ /= rmorph_prod.
@@ -201,7 +201,7 @@ congr (_ * _) ; apply: eq_bigr => i _.
 by rewrite /= horner_evalE hornerXsubC add0r. 
 Qed.
 
-Fact irootsP (p : {poly K}) : p != 0 -> iroots p =i root (p ^ iota).
+Fact irootsP (p : {poly K}) : p != 0 -> iroots p =i root (p ^ f).
 Proof. move => p_neq0 x ; by rewrite /iroots rootsP // map_poly_eq0. Qed.
 
 Lemma perm_eq_roots (p q : {poly L}) : p %= q -> (roots p) =p (roots q).
@@ -213,8 +213,8 @@ by rewrite H perm_eq_roots_mulC.
 Qed.
 
 Lemma lead_coef_revp (p : {poly K}) : p`_0 != 0 -> 
-  iota (lead_coef (revp p)) = 
-  (iota (lead_coef p)) * (\prod_(r <- iroots p) (-r)).
+  f (lead_coef (revp p)) = 
+  (f (lead_coef p)) * (\prod_(r <- iroots p) (-r)).
 Proof.
 move => H ; rewrite -coef0_iroots.
 have -> : lead_coef (revp p) = p`_0 ; last by [].
@@ -225,8 +225,8 @@ by move/eqP : H ->.
 Qed.
 
 Lemma comp_p_q (p : {poly K}) (q : {fracpoly K}) :  
-  ((p ^iota) %:F) \FPo (q ^^^ iota) 
-  = ((iota (lead_coef p))%:FP) * \prod_(r <- iroots p) ((q ^^^ iota) - (r%:FP)). 
+  ((p ^ f) %:F) \FPo (q ^^^ f) 
+  = ((f (lead_coef p))%:FP) * \prod_(r <- iroots p) ((q ^^^ f) - (r%:FP)). 
 Proof.
 have [peq0 | pneq0] := boolP (p == 0).
   by move/eqP: peq0 => ->; rewrite lead_coef0 !rmorph0 comp_fracpoly0 mul0r. 
@@ -242,13 +242,13 @@ Fact  iroots_size (p : {poly K}) : size (iroots p) = (size p).-1.
 Proof. by rewrite /iroots roots_size size_map_iota_p. Qed.
 
 (* should be in revpoly with K a closed field *)
-Lemma revp_factorization (p : {poly K}) : ((revp p) ^ iota) = 
-    (iota (lead_coef p)) *: (\prod_(r <- iroots p) (1 - r*:'X)).
+Lemma revp_factorization (p : {poly K}) : ((revp p) ^ f) = 
+    (f (lead_coef p)) *: (\prod_(r <- iroots p) (1 - r*:'X)).
 Proof.
 have [p_eq0 | p_neq0] := boolP (p == 0).
   by move/eqP : p_eq0 ->; rewrite revp0 lead_coef0 !rmorph0 scale0r.
 apply/eqP; rewrite -(inj_eq (@tofrac_inj _)) -revp_map tofrac_revp. 
-rewrite size_map_iota_p -(map_fracpolyXV iota) comp_p_q /=. 
+rewrite size_map_iota_p -(map_fracpolyXV f) comp_p_q /=. 
 rewrite -mul_polyC rmorphM /= -mulrA ; apply/eqP ; congr (_ * _).
 have -> : 'X%:F ^+ (size p).-1 = \prod_(r <- iroots p) 'X%:F => [t|].
   rewrite (big_const_seq 1 (@GRing.mul _) (iroots p) predT 'X%:F).
@@ -261,11 +261,11 @@ rewrite mulrBl rmorphD /= map_fracpolyXV mulrC divff; last first.
 by rewrite rmorphN /= tofrac_scale.
 Qed.
 
-Definition mu (x : L) (p : {poly K}) := polyorder.multiplicity x (p ^ iota).
+Definition mu (x : L) (p : {poly K}) := polyorder.multiplicity x (p ^ f).
 
 (* should be in revpoly with K a closed field *)
-Lemma revp_factorization2 (p : {poly K}) : ((revp p) ^ iota) = 
-  (iota (lead_coef p)) * (-1)^+((size p).-1 - (mu 0 p)) 
+Lemma revp_factorization2 (p : {poly K}) : ((revp p) ^ f) = 
+  (f (lead_coef p)) * (-1)^+((size p).-1 - (mu 0 p)) 
   * (\prod_(r <- iroots p | r != 0) r)
   *: (\prod_(r <- iroots p | r != 0) ('X - (r ^-1)%:P)). 
 Proof.
@@ -292,7 +292,7 @@ Fact zero_in_iroots (p : {poly K}) : p != 0 -> (0 \in (iroots p)) = (root p 0).
 Proof.
 move => p_neq0.
 rewrite rootsP ?map_poly_eq0 //. 
-by rewrite (qualifE 0) -{1}[0](rmorph0 iota) horner_map fmorph_eq0.
+by rewrite (qualifE 0) -{1}[0](rmorph0 f) horner_map fmorph_eq0.
 Qed.
 
 Fact pneq0 (p : {poly K}) : ~~ (root p 0) -> p != 0.
@@ -328,7 +328,7 @@ Qed.
 
 (* should be in fraction with K a closed field *)
 Lemma deriv_p_over_p (p : {poly K}) : p != 0 -> 
-((p ^`())%:F / (p%:F)) ^^^ iota = \sum_(r <- iroots p) (('X - r%:P)%:F) ^-1.
+((p ^`())%:F / (p%:F)) ^^^ f = \sum_(r <- iroots p) (('X - r%:P)%:F) ^-1.
 Proof.
 move => pN0; rewrite map_frac_frac /= -deriv_map (factorization _) derivZ.
 rewrite -!mul_polyC !rmorphM -mulf_div divff; last first.
@@ -351,7 +351,7 @@ Qed.
 
 Hypothesis char_K_is_zero : [char K] =i pred0.
 
-Lemma newton_roots (p : {poly K}) : (newton p) ^^^ iota = 
+Lemma newton_roots (p : {poly K}) : (newton p) ^^^ f = 
   \sum_(r <- iroots p) (1 - r *: 'X)%:F ^-1.
 Proof.
 have [p_big|p_small] := ltnP 1 (size p); last first.
@@ -366,15 +366,15 @@ rewrite fmorph_div /= fracpoly_iota_comp_fracpoly.
 rewrite fmorphV /= !map_fracE /= map_polyX deriv_p_over_p //.
 rewrite (@big_morph _ _ (fun x => x \FPo 'X^-1) 0 +%R); first last.
 - by rewrite comp_fracpoly0.
-- by move=> f g /=; rewrite comp_fracpolyD ?nocomp_fracpolyXV.
+- by move=> g h /=; rewrite comp_fracpolyD ?nocomp_fracpolyXV.
 rewrite mulr_suml; apply: eq_bigr => i _; rewrite comp_fracpolyV -invfM.
 rewrite comp_poly_frac !rmorphB /= map_polyX map_polyC /= hornerXsubC.
 by rewrite mulrDl mulVf ?rmorph_eq0 ?polyX_eq0 // mulNr -mul_polyC rmorphM.
 Qed.
 
 Definition cadd (p q : {poly K}) :=
-  if (p == 0) then (q ^ iota) else
-  if (q == 0) then (p ^ iota) else
+  if (p == 0) then (q ^ f) else
+  if (q == 0) then (p ^ f) else
   \prod_(r <- [seq s+t | s <- iroots p, t <- iroots q]) ('X - r%:P).
 
 Lemma caddP (p q : {poly K}) : p != 0 -> q != 0 -> cadd p q = 
@@ -384,10 +384,10 @@ move/negbTE => p_neq0 /negbTE q_neq0.
 by rewrite /cadd p_neq0 q_neq0.
 Qed.
 
-Lemma cadd0p (p : {poly K}) : cadd 0 p = (p ^ iota).
+Lemma cadd0p (p : {poly K}) : cadd 0 p = (p ^ f).
 Proof. by rewrite /cadd eqxx. Qed.
 
-Lemma caddp0 (p : {poly K}) : cadd p 0 = (p ^ iota).
+Lemma caddp0 (p : {poly K}) : cadd p 0 = (p ^ f).
 Proof.
 rewrite /cadd.
 have [ -> | p_neq0] := eqVneq p 0 ; first by rewrite eqxx.
@@ -454,7 +454,7 @@ Qed.
 Local Notation "f ^ g" := (map_tfps g f). 
 
 Lemma iota_newton_tfps (p : {poly K}) (m : nat) :
-  newton_tfps m p ^ iota = [tfps j => \sum_(r <- iroots p) r ^+ j].
+  newton_tfps m p ^ f = [tfps j => \sum_(r <- iroots p) r ^+ j].
 Proof.
 rewrite map_Tfpsfp /= newton_roots.
 rewrite (big_morph_in (@devsD _) _ (@TfpsfpD _ _) (@Tfpsfp0 _ _)); last 2 first.
@@ -469,7 +469,7 @@ by apply: eq_bigr => x _; rewrite geometric_series /= coef_poly ltn_ord.
 Qed.
 
 Lemma map_poly_tfps m (s : {tfps K m}) :
-  map_poly iota (val s) = val (s ^ iota).
+  map_poly f (val s) = val (s ^ f).
 Proof.
 by rewrite /= modp_small // size_polyXn ltnS size_map_poly size_tfps.
 Qed.
@@ -477,7 +477,7 @@ Qed.
 Lemma newton_tfps_coef0 (p : {poly K}) (m : nat) :
     (newton_tfps m p)`_0 = ((size p).-1)%:R.
 Proof.
-apply: (@rmorph_inj _ _ iota).
+apply: (@rmorph_inj _ _ f).
 rewrite -coef_map map_poly_tfps iota_newton_tfps coef_tfps /=.
 rewrite rmorph_nat -iroots_size -sum1_size natr_sum.
 by apply: eq_bigr => r; rewrite expr0.
@@ -487,7 +487,7 @@ End Newton.
 
 Section Conversion.
 
-Variable (K : fieldType) (L : closedFieldType) (iota : {injmorphism K -> L}). 
+Variable (K : fieldType) (L : closedFieldType) (f : {injmorphism K -> L}). 
 
 Local Notation "f ^ g" := (map_tfps g f).
 
@@ -496,7 +496,7 @@ Hypothesis char_L_is_zero : [char L] =i pred0.
 Hint Resolve char_L_is_zero.
 
 Lemma char_K_is_zero : [char K] =i pred0.
-Proof. move => x ; by rewrite -(fmorph_char iota). Qed. 
+Proof. move => x ; by rewrite -(fmorph_char f). Qed. 
 
 Hint Resolve char_K_is_zero. 
 
@@ -515,13 +515,13 @@ Lemma iroots_idfun (p : {poly L}) :
 Proof. by rewrite /iroots map_poly_idfun. Qed.
 
 Lemma iroots_cmul (p q : {poly K}) :
-   iroots [injmorphism of @idfun L] (cmul iota p q) 
-                         =p [seq s*t | s <- iroots iota p, t <- iroots iota q].
+   iroots [injmorphism of @idfun L] (cmul f p q) 
+                         =p [seq s*t | s <- iroots f p, t <- iroots f q].
 Proof. rewrite iroots_idfun; exact: roots_cmul. Qed.
 
 Lemma iroots_cadd (p q : {poly K}) : p != 0 -> q != 0 ->
-   iroots [injmorphism of @idfun L] (cadd iota p q) 
-                       =p [seq s + t | s <- iroots iota p, t <- iroots iota q].
+   iroots [injmorphism of @idfun L] (cadd f p q) 
+                       =p [seq s + t | s <- iroots f p, t <- iroots f q].
 Proof.
 move => p_neq0 q_neq0.
 rewrite iroots_idfun ; exact: roots_cadd.
@@ -539,8 +539,8 @@ Qed.
  
 Lemma newton_cmul (p q : {poly K}) :
   let m := ((size p).-1 * (size p).-1)%N in
-  newton_tfps m (cmul iota p q) =
-  (hmul_tfps (newton_tfps m p) (newton_tfps m q)) ^ iota.
+  newton_tfps m (cmul f p q) =
+  (hmul_tfps (newton_tfps m p) (newton_tfps m q)) ^ f.
 Proof.
 rewrite /=.
 set m := ((size p).-1 * (size p).-1)%N.
@@ -550,15 +550,15 @@ have [p_eq0 | p_neq0 ] := eqVneq p 0.
 have [q_eq0 | q_neq0] := eqVneq q 0.  
   rewrite q_eq0 newton_tfps0 hmul_tfpsr0 rmorph0 cmulp0.
   exact: newton_tfps0.
-have -> : newton_tfps m (cmul iota p q) =
-    newton_tfps m (cmul iota p q) ^ [rmorphism of (@idfun L)].
+have -> : newton_tfps m (cmul f p q) =
+    newton_tfps m (cmul f p q) ^ [rmorphism of (@idfun L)].
   by rewrite (@map_powerseries_idfun _ _).
 rewrite (@map_powerseries_idfun _ _) /=.
 rewrite map_hmul !iota_newton_tfps //; apply/eq_tfps => i /=.
 rewrite !coef_poly ltn_ord.
 rewrite (big_distrl _ _ _) /=.
 rewrite nth_newton_tfps ltn_ord.
-rewrite (eq_big_perm [seq s * t | s <- iroots iota p, t <- iroots iota q])
+rewrite (eq_big_perm [seq s * t | s <- iroots f p, t <- iroots f q])
                                                                     ; last first.
 exact: iroots_cmul.
 rewrite /= eq_big_allpairs /=.
@@ -588,7 +588,7 @@ by rewrite -(@poly_def _ _ (fun i => i`!%:R^-1))  coef_poly; case: (_ < _).
 Qed.
 
 (* can be generalized to (exp f) ^ iota = exp (f ^ iota) *)
-Lemma map_iota_expX (m : nat) : expX K m ^ iota = expX L m.
+Lemma map_iota_expX (m : nat) : expX K m ^ f = expX L m.
 Proof.
 rewrite /expX /exp !coef0_is_0E !nth0_Tfpsp !coefX !eqxx -Tfps_map_poly. 
 rewrite rmorph_sum; congr Tfpsp; apply: eq_bigr => i _.
@@ -606,7 +606,7 @@ rewrite !coef_poly nth_expX.
 by case: (i < m.+1).
 Qed.
 
-Lemma aux_newton_cadd (K' : fieldType) (f : {rmorphism K' -> L}) 
+Lemma aux_newton_cadd (K' : fieldType) (g : {rmorphism K' -> L}) 
   (m : nat) (s t : seq K') (p : {tfps K' m}) : p \in (@coef0_is_0 K' m) ->
   \sum_(w <- [seq u + v | u <- s, v <- t]) (exp (w *: p)) = 
   (\sum_(u <- s) (exp (u *: p))) * (\sum_(v <- t) (exp (v *: p))).
@@ -614,7 +614,7 @@ Proof.
 move => p0_eq0.
 have H : [char K'] =i pred0.
   move => x.
-  rewrite -(fmorph_char f).
+  rewrite -(fmorph_char g).
   by move: x. (* strange *)
 rewrite eq_big_allpairs /=.
 have -> : \sum_(i <- s) \sum_(j <- t) exp ((i + j) *: p) =
@@ -679,9 +679,9 @@ Qed.
 Lemma newton_cadd (p q : {poly K}) :
   p != 0 -> q != 0 ->
   let m := ((size p).-1 * (size p).-1)%N in
-  hmul_tfps (newton_tfps m (cadd iota p q)) (expX L m) =
+  hmul_tfps (newton_tfps m (cadd f p q)) (expX L m) =
   ((hmul_tfps (newton_tfps m p) (expX K m)) 
-                    * (hmul_tfps (newton_tfps m q) (expX K m))) ^ iota.
+                    * (hmul_tfps (newton_tfps m q) (expX K m))) ^ f.
 Proof.
 move => p_neq0 q_neq0 /=.
 set m := ((size p).-1 * (size p).-1)%N.
@@ -691,7 +691,7 @@ case: m => [|m].
   rewrite !big_ord_recr !big_ord0 !Monoid.simpm.
   rewrite !expr0 !coefC eqxx !mulr1. 
   rewrite !(newton_tfps_coef0 [injmorphism of (@idfun L)]) //.
-  rewrite !(newton_tfps_coef0 iota) //=.
+  rewrite !(newton_tfps_coef0 f) //=.
   rewrite size_cadd // natrM !linearZ /=.
   rewrite rmorph1 !rmorph_nat mulr_algr scalerA mulrC expr1 modp_mod.
   rewrite modp_small // size_polyX (leq_ltn_trans (size_scale_leq _ _)) //.
@@ -699,7 +699,7 @@ case: m => [|m].
   exact: leq_b1.
 rewrite rmorphM /= !map_hmul map_iota_expX !newton_tfps_map_iota.
 rewrite !sum_exp_kX. 
-rewrite (eq_big_perm [seq s + t | s <- iroots iota p, t <- iroots iota q]) /= ;
+rewrite (eq_big_perm [seq s + t | s <- iroots f p, t <- iroots f q]) /= ;
   last exact: iroots_cadd.
 rewrite !iroots_idfun.
 apply: (aux_newton_cadd [rmorphism of @idfun L]).
@@ -707,12 +707,12 @@ by rewrite coef0_is_0E nth0_Tfpsp coefX [in X in X == _]eq_sym.
 Qed.
 
 Fact aux_conversion1 (p : {poly K}) : ~~ (root p 0) ->
-   ((revp p)^`() // revp p) ^^^ iota  = 
-  - \sum_(i <- iroots iota p) i%:FP * (1 - i *: 'X)%:F^-1.
+   ((revp p)^`() // revp p) ^^^ f  = 
+  - \sum_(i <- iroots f p) i%:FP * (1 - i *: 'X)%:F^-1.
 Proof.
 move => zeroNroot.
 rewrite deriv_p_over_p; last by rewrite revp_eq0 pneq0. 
- rewrite (eq_big_perm [seq x^-1 | x <- iroots iota p]) ; 
+ rewrite (eq_big_perm [seq x^-1 | x <- iroots f p]) ; 
                                                     last by rewrite roots_revp.
 rewrite big_map big_seq (eq_bigr (fun r => - (r%:FP * (1 - r *: 'X)%:F^-1))) 
                                                      => [ | r Hr] ; last first.
@@ -735,8 +735,8 @@ Qed.
 (* to generalize ? *)
 Fact aux_conversion2 (m : nat) (p : {poly K}) :
   ~~ (root p 0) ->
-  Tfpsfp m (((revp p)^`() // revp p) ^^^ iota) = 
-  - [tfps i => \sum_(r <- iroots iota p) r ^+i.+1].
+  Tfpsfp m (((revp p)^`() // revp p) ^^^ f) = 
+  - [tfps i => \sum_(r <- iroots f p) r ^+i.+1].
 Proof.
 move => zeroNroot.
 rewrite aux_conversion1 // TfpsfpN; last first.
@@ -765,25 +765,25 @@ End Conversion.
 
 Section MoreConversion.
 
-Variables (K : fieldType) (L : closedFieldType) (iota : {injmorphism K -> L}).
+Variables (K : fieldType) (L : closedFieldType) (f : {injmorphism K -> L}).
 Variable (m' : nat).
 Let m := m'.+1.
 
 Hypothesis char_L_is_zero : [char L] =i pred0.
 
 Hint Resolve char_L_is_zero.
-Hint Resolve (char_K_is_zero iota char_L_is_zero).
+Hint Resolve (char_K_is_zero f char_L_is_zero).
 
 Fact aux_conversion4 (p : {poly K}) : ~~ root p 0 ->
   Tfpsfp m' ((revp p)^`() // revp p)
   = divfX (((size p).-1)%:R%:S - (newton_tfps m p)).
 Proof.
 move => zeroNroot.
-apply: (@map_tfps_injective _ _ m' iota).
-rewrite map_Tfpsfp aux_conversion2 // (@map_tfps_divfX _ _ iota m'.+1).
+apply: (@map_tfps_injective _ _ m' f).
+rewrite map_Tfpsfp aux_conversion2 // (@map_tfps_divfX _ _ f m'.+1).
 rewrite divfXE; last first.
   rewrite coef0_is_0E -map_poly_tfps coef_map coefB nth0_Tfpsp //.
-  by rewrite (newton_tfps_coef0 iota) // coefC /= subrr rmorph0.
+  by rewrite (newton_tfps_coef0 f) // coefC /= subrr rmorph0.
 apply/eq_tfps => i.
 rewrite coefN !coef_poly ltn_ord rmorphB coefB [X in X`_i.+1]/=.
 rewrite [X in val X]/=  newton_tfps_map_iota nth_newton_tfps //.
@@ -820,7 +820,7 @@ have -> : revp p = Tfpsp m (revp p).
 rewrite [Tfpsp _ _ in RHS]exp_prim_derivp_over_p; last first.
   by rewrite coef0_is_1E nth0_Tfpsp coef0_revp -monicE.
 congr (exp (prim_tfps _)).
-rewrite (newton_tfps_coef0 iota) // -aux_conversion4 //=.
+rewrite (newton_tfps_coef0 f) // -aux_conversion4 //=.
 rewrite modp_small; last first.
   by rewrite size_polyXn size_revp (leq_ltn_trans (leq_subr _ _)).
 rewrite Tfpsfp_frac; last first.

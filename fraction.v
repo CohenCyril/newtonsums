@@ -793,27 +793,27 @@ End EvalFracInj.
 
 Section MapFrac.
 
-Variable (R S : idomainType) (iota : {injmorphism R -> S}).
-Let tofrac_map := [injmorphism of tofrac \o iota].
-Definition map_frac_of (phiota : phantom (R -> S) iota) := tofrac_map.-eval.
-Local Notation map_frac := (map_frac_of (Phantom (_ -> _) iota)).
+Variable (R S : idomainType) (f : {injmorphism R -> S}).
+Let tofrac_map := [injmorphism of tofrac \o f].
+Definition map_frac_of (phf : phantom (R -> S) f) := tofrac_map.-eval.
+Local Notation map_frac := (map_frac_of (Phantom (_ -> _) f)).
 
 Canonical map_frac_is_additive := [additive of map_frac].
 Canonical map_frac_is_rmorphism := [rmorphism of map_frac].
 Canonical map_frac_is_injmorphism := [injmorphism of map_frac].
 
-Lemma map_fracE (x : R) : map_frac (x%:F) = (iota x)%:F.
+Lemma map_fracE (x : R) : map_frac (x%:F) = (f x)%:F.
 Proof. by rewrite [LHS]feval_tofrac. Qed.
 
-Lemma map_frac_frac (x y : R) : map_frac (x // y) = (iota x) // (iota y).
+Lemma map_frac_frac (x y : R) : map_frac (x // y) = (f x) // (f y).
 Proof. by rewrite fmorph_div /= !map_fracE. Qed.
 
-Lemma map_frac_tofracV (x : R) : map_frac (x%:F^-1) = (iota x)%:F^-1.
+Lemma map_frac_tofracV (x : R) : map_frac (x%:F^-1) = (f x)%:F^-1.
 Proof. by rewrite !fmorphV /= map_fracE. Qed.
 
 End MapFrac.
 
-Notation map_frac iota := (map_frac_of (Phantom (_ -> _) iota)).
+Notation map_frac f := (map_frac_of (Phantom (_ -> _) f)).
 Local Notation "p ^^ f" := (map_frac f p)
    (f at next level, at level 30).
 Local Notation "p ^^^ f" := (map_frac (map_poly f) p)
@@ -952,26 +952,26 @@ Notation "f .<[ a ]>" := (a.-fpeval f)
 
 Section MapPolyFrac.
 
-Variable (K L : fieldType) (iota : {injmorphism K -> L}).
+Variable (K L : fieldType) (f : {injmorphism K -> L}).
 
-Lemma map_fracpolyX : 'XF ^^^ iota = 'XF.
+Lemma map_fracpolyX : 'XF ^^^ f = 'XF.
 Proof. by rewrite map_fracE /= map_polyX. Qed.
 
-Lemma map_fracpolyC (c : K) : (c %:FP) ^^^ iota = (iota c) %:FP.
+Lemma map_fracpolyC (c : K) : (c %:FP) ^^^ f = (f c) %:FP.
 Proof. by rewrite map_fracE /= map_polyC. Qed.
 
-Lemma map_fracpolyXV : 'X^-1 ^^^ iota = 'X^-1.
+Lemma map_fracpolyXV : 'X^-1 ^^^ f = 'X^-1.
 Proof. by rewrite map_frac_tofracV /= map_polyX. Qed.
 
-Lemma map_fracpolyXn n : 'X^+n ^^^ iota = 'X^+n.
+Lemma map_fracpolyXn n : 'X^+n ^^^ f = 'X^+n.
 Proof. by rewrite rmorphX /= map_fracpolyX. Qed.
 
-Lemma map_fracpolyXVn n : 'X^-n ^^^ iota = 'X^-n.
+Lemma map_fracpolyXVn n : 'X^-n ^^^ f = 'X^-n.
 Proof. by rewrite -!exprVn rmorphX fmorphV /= map_fracpolyX. Qed.
 
 (* TODO: is it general enough? *)
-Lemma to_fracpoly_map_iota (p : {poly K}) :
-  (p ^ iota) ^:FP = (p ^:FP) ^ (map_frac (map_poly iota)).
+Lemma to_fracpoly_map_f (p : {poly K}) :
+  (p ^ f) ^:FP = (p ^:FP) ^ (map_frac (map_poly f)).
 Proof.
 by rewrite -!map_poly_comp; apply: eq_map_poly => x /=; rewrite map_fracpolyC.
 Qed.
@@ -980,20 +980,20 @@ End MapPolyFrac.
 
 Section FPEvalMap.
 
-Variables (K1 K2 : fieldType) (iota : {injmorphism K1 -> K2}) (a : K1).
+Variables (K1 K2 : fieldType) (f : {injmorphism K1 -> K2}) (a : K1).
 
-Lemma fppole_map (f : {fracpoly K1}) :
-  (iota a).-fppole (f ^^^ iota) = a.-fppole f.
+Lemma fppole_map (g : {fracpoly K1}) :
+  (f a).-fppole (g ^^^ f) = a.-fppole g.
 Proof.
-have [[p q] -> {f} /=  /andP [q_neq0 cpq]] := fracpolyE f.
+have [[p q] -> {g} /=  /andP [q_neq0 cpq]] := fracpolyE g.
 have [->|p_neq0] := eqVneq p 0; first by rewrite mul0r !rmorph0 !fpole0.
 rewrite fmorph_div /= !map_fracE !coprimep_fpole ?rmorph_eq0 ?coprimep_map //.
 by rewrite horner_map rmorph_eq0.
 Qed.
 
-Lemma fpeval_map (f : {fracpoly K1}) : (f ^^^ iota).<[iota a]> = iota f.<[a]>.
+Lemma fpeval_map (g : {fracpoly K1}) : (g ^^^ f).<[f a]> = f g.<[a]>.
 Proof.
-have [[p q] -> {f} /=  /andP [q_neq0 cpq]] := fracpolyE f.
+have [[p q] -> {g} /=  /andP [q_neq0 cpq]] := fracpolyE g.
 rewrite fmorph_div /= !map_fracE !coprimep_feval ?coprimep_map //.
 by rewrite !horner_map fmorph_div.
 Qed.
@@ -1002,84 +1002,84 @@ End FPEvalMap.
 
 Section CompFrac.
 Variable (K : fieldType).
-Implicit Types (f g h : {fracpoly K}).
+Implicit Types (g h i : {fracpoly K}).
 Implicit Types (p q r : {poly K}).
 
-Definition comp_fracpoly f g := (f ^^^ tofracpoly).<[g]>.
-Definition nocomp_fracpoly f g := g.-fppole (f ^^^ tofracpoly).
+Definition comp_fracpoly g h := (g ^^^ tofracpoly).<[h]>.
+Definition nocomp_fracpoly g h := h.-fppole (g ^^^ tofracpoly).
 
 Lemma horner_map_polyC p q : (p ^ polyC).[q] = p \Po q.
 Proof. by []. Qed.
 
-Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
+Notation "g \FPo h" := (comp_fracpoly g h) : ring_scope.
 
-Lemma comp_poly_frac p f : p%:F \FPo f = (p ^ tofracpoly).[f].
+Lemma comp_poly_frac p g : p%:F \FPo g = (p ^ tofracpoly).[g].
 Proof. by rewrite /comp_fracpoly map_fracE /= feval_tofrac /=. Qed.
 
-Lemma comp_poly_fracE p f : p%:F \FPo f = \sum_(i < size p) (p`_i)%:FP * f ^+ i.
+Lemma comp_poly_fracE p g : p%:F \FPo g = \sum_(i < size p) (p`_i)%:FP * g ^+ i.
 Proof.
 rewrite comp_poly_frac horner_coef size_map_poly /=.
 by apply: eq_bigr => i _; rewrite coef_map.
 Qed.
 
-Lemma comp_fracpolyC (c : K) f : (c %:FP) \FPo f = c %:FP.
+Lemma comp_fracpolyC (c : K) g : (c %:FP) \FPo g = c %:FP.
 Proof. by rewrite comp_poly_frac map_polyC hornerC. Qed.
 
-Lemma comp_fracpoly0 f : 0 \FPo f = 0.
+Lemma comp_fracpoly0 g : 0 \FPo g = 0.
 Proof. by rewrite comp_fracpolyC. Qed.
 
-Lemma comp_fracpoly_dflt f g : nocomp_fracpoly f g -> f \FPo g = 0.
-Proof. by move=> pole_fg; rewrite [LHS]feval_pole. Qed.
+Lemma comp_fracpoly_dflt g h : nocomp_fracpoly g h -> g \FPo h = 0.
+Proof. by move=> pole_gh; rewrite [LHS]feval_pole. Qed.
 
-Lemma comp_fracpolyD f g h :
-  ~~ nocomp_fracpoly f h -> ~~ nocomp_fracpoly g h ->
-  (f + g) \FPo h = (f \FPo h) + (g \FPo h).
+Lemma comp_fracpolyD g h i :
+  ~~ nocomp_fracpoly g i -> ~~ nocomp_fracpoly h i ->
+  (g + h) \FPo i = (g \FPo i) + (h \FPo i).
 Proof. by move=> ??; rewrite /comp_fracpoly !rmorphD /= fevalD. Qed.
 
-Lemma comp_fracpolyN f g :  (- f) \FPo g = - (f \FPo g).
+Lemma comp_fracpolyN g h :  (- g) \FPo h = - (g \FPo h).
 Proof. by rewrite /comp_fracpoly !rmorphN /= fevalN. Qed.
 
-Lemma comp_fracpolyM f g h :
-  ~~ nocomp_fracpoly f h -> ~~ nocomp_fracpoly g h ->
-  (f * g) \FPo h = (f \FPo h) * (g \FPo h).
+Lemma comp_fracpolyM g h i :
+  ~~ nocomp_fracpoly g i -> ~~ nocomp_fracpoly h i ->
+  (g * h) \FPo i = (g \FPo i) * (h \FPo i).
 Proof. by move=> ??; rewrite /comp_fracpoly !rmorphM /= fevalM. Qed.
 
-Lemma comp_fracpolyXr f : f \FPo ('X %:F) = f.
+Lemma comp_fracpolyXr g : g \FPo ('X %:F) = g.
 Proof.
-rewrite /comp_fracpoly; have [[p q] -> {f} /= /andP [p2_neq0 cp]] := fracpolyE f.
+rewrite /comp_fracpoly; have [[p q] -> {g} /= /andP [p2_neq0 cp]] := fracpolyE g.
 rewrite !fmorph_div /= !map_fracE coprimep_feval ?coprimep_map //=.
 rewrite /tofracpoly !map_poly_comp !horner_map /= !horner_map_polyC.
 by rewrite !comp_polyXr.
 Qed.
 
-Lemma comp_fracpoly_exp (m : nat) f  g : (f ^+ m) \FPo g = (f \FPo g) ^+ m.
+Lemma comp_fracpoly_exp (m : nat) g h : (g ^+ m) \FPo h = (g \FPo h) ^+ m.
 Proof.
 case: m => [|m]; first by rewrite !expr0 comp_fracpolyC.
 by rewrite /comp_fracpoly !rmorphX /= fpevalX.
 Qed.
 
-Lemma comp_fracpolyV f g : (f ^-1) \FPo g = (f \FPo g) ^-1.
+Lemma comp_fracpolyV g h : (g ^-1) \FPo h = (g \FPo h) ^-1.
 Proof. by rewrite /comp_fracpoly !fmorphV /= fevalV. Qed.
 
-Lemma comp_fracpoly_div f g h : g \FPo h != 0 ->
-  (f / g) \FPo h = (f \FPo h) / (g \FPo h).
+Lemma comp_fracpoly_div g h i : h \FPo i != 0 ->
+  (g / h) \FPo i = (g \FPo i) / (h \FPo i).
 Proof. by move=> ?; rewrite /comp_fracpoly !fmorph_div /= feval_divN0. Qed.
 
-Lemma pole_comp_fracpolyPn f g : 
-  reflect (exists2 c : K, c.-fppole f & g = c%:FP) (nocomp_fracpoly f g).
+Lemma pole_comp_fracpolyPn g h : 
+  reflect (exists2 c : K, c.-fppole g & h = c%:FP) (nocomp_fracpoly g h).
 Proof.
 rewrite /nocomp_fracpoly; apply: (iffP idP); last first.
   by move=> [c ? ->]; rewrite fppole_map.
-have [[p q] -> {f} /= /andP [q_neq0 cp_pq]] := fracpolyE f.
+have [[p q] -> {g} /= /andP [q_neq0 cp_pq]] := fracpolyE g.
 have [->|p_neq0] := eqVneq p 0; first by rewrite mul0r !rmorph0 fpole0.
 rewrite fmorph_div /= !map_fracE coprimep_fpole ?rmorph_eq0 ?coprimep_map //=.
-have [[u v] -> {g} /= /andP [v_neq0 cp_uv]] := fracpolyE g => hq.
+have [[u v] -> {h} /= /andP [v_neq0 cp_uv]] := fracpolyE h => hq.
 have H : \sum_(i < size q) q`_i *: u ^+ i * v ^+ ((size q).-1 - i) = 0.
   move: hq.
   rewrite -{1}[q]coefK poly_def rmorph_sum horner_sum /=.
   move/eqP/(congr1 ( *%R^~ ((v ^+ (size q).-1)%:F))); rewrite mul0r mulr_suml.
-  rewrite (eq_bigr (fun i => (q`_(nat_of_ord i) 
-                   *: u ^+i * v ^+((size q).-1 - i))%:F)) => [|i _] ; last first.
+  rewrite (eq_bigr (fun j => (q`_(nat_of_ord j) 
+                   *: u ^+j * v ^+((size q).-1 - j))%:F)) => [|j _] ; last first.
     rewrite linearZ hornerZ /= map_polyXn hornerXn expr_div_n.
     rewrite -scalerAl tofrac_scale -mulrA mulrAC rmorphM !rmorphX -mulrA.
     rewrite exprB // ?unitfE ?raddf_eq0 // ; last exact: tofrac_inj.
@@ -1089,9 +1089,9 @@ have H : \sum_(i < size q) q`_i *: u ^+ i * v ^+ ((size q).-1 - i) = 0.
 have dvdv1 : v %| 1.
   move/(congr1 (fun x => x %% v)) : H.
   rewrite mod0p modp_sumn.
-  rewrite -(big_mkord predT (fun i => (q`_i *: u ^+ i * v ^+ (_ - i) %% v))) /=.
+  rewrite -(big_mkord predT (fun j => (q`_j *: u ^+ j * v ^+ (_ - j) %% v))) /=.
   rewrite big_nat_rev big_ltn ?size_poly_gt0 // big_nat.
-  rewrite (eq_bigr (fun i => 0)) => [|i /andP [hi1 hi2]]; last first.
+  rewrite (eq_bigr (fun j => 0)) => [|i /andP [hi1 hi2]]; last first.
     rewrite -modp_mul [X in _ * X]modp_eq0 ?dvdp_exp ?subn_gt0 //; last first.
       rewrite add0n subnS prednK ?subn_gt0 ?leq_subr // leq_subLR -ltnS -addnS.
       by rewrite prednK ?size_poly_gt0 // -[X in X < _]add0n ltn_add2r.
@@ -1113,21 +1113,21 @@ have [/andP [valp_gt0 /eqP ->]| /negbTE HF] := boolP ((0 < valp q) && (u == 0)).
   by rewrite valp_eq0.
 have dvdu1 : u %| 1.
   move: H.
-  rewrite -(big_mkord predT (fun i => q`_i *: u ^+ i * v ^+ (_ - i))).
-  rewrite (big_cat_nat _ predT (fun i => q`_i *: 
-              u ^+ i * v ^+ ((size q).-1 - i)) (leq0n (valp q))) /= ; last first.
+  rewrite -(big_mkord predT (fun j => q`_j *: u ^+ j * v ^+ (_ - j))).
+  rewrite (big_cat_nat _ predT (fun j => q`_j *: 
+              u ^+ j * v ^+ ((size q).-1 - j)) (leq0n (valp q))) /= ; last first.
     by rewrite ltnW // valp_small.
   rewrite big_nat.
-  rewrite (eq_bigr (fun=> 0)) ?big1_eq ?add0r => [|i /andP [_ hi]]; last first.
+  rewrite (eq_bigr (fun=> 0)) ?big1_eq ?add0r => [|j /andP [_ hi]]; last first.
     by rewrite valp_coef_eq0 // scale0r mul0r.
   rewrite big_nat.
-  rewrite (eq_bigr (fun i => (u ^+ (valp q)) * (q`_i *: u ^+ (i - (valp q)) *
-                      v ^+ ((size q).-1 - i)))) => [|i /andP [hi _]]; last first.
+  rewrite (eq_bigr (fun j => (u ^+ (valp q)) * (q`_j *: u ^+ (j - (valp q)) *
+                      v ^+ ((size q).-1 - j)))) => [|j /andP [hi _]]; last first.
     rewrite mulrA; congr (_ * _); rewrite -scalerCA -scalerAl -exprD subnKC //.
   rewrite -mulr_sumr; move/eqP; rewrite mulf_eq0.
   rewrite expf_eq0 HF orFb -big_nat big_ltn ?valp_small // subnn expr0 big_nat.
-  rewrite (eq_bigr (fun i => u * (q`_i *: u ^+ (i - valp q).-1 * 
-                     v ^+ ((size q).-1 - i)) )) => [|i /andP [hi _]]; last first.
+  rewrite (eq_bigr (fun j => u * (q`_j *: u ^+ (j - valp q).-1 * 
+                     v ^+ ((size q).-1 - j)) )) => [|j /andP [hj _]]; last first.
     rewrite mulrA; congr (_ * _). 
     by rewrite -scalerCA -scalerAl -exprS prednK // subn_gt0. 
   rewrite -mulr_sumr [X in _ + X]mulrC; move/eqP.
@@ -1152,13 +1152,13 @@ rewrite -rmorph_div ?unitfE // horner_map raddf_eq0 //.
 exact: (inj_comp (@tofrac_inj _) (@polyC_inj _)). 
 Qed.
 
-Lemma cst_nocomp_fracpoly f (c : K) : nocomp_fracpoly f (c%:FP) = c.-fppole f.
+Lemma cst_nocomp_fracpoly g (c : K) : nocomp_fracpoly g (c%:FP) = c.-fppole g.
 Proof. by rewrite /nocomp_fracpoly fppole_map. Qed.
 
-Lemma Ncst_nocomp_fracpoly r f : size r > 1 -> ~~ nocomp_fracpoly f r%:F.
+Lemma Ncst_nocomp_fracpoly r g : size r > 1 -> ~~ nocomp_fracpoly g r%:F.
 Proof.
 rewrite /nocomp_fracpoly => r_gt1.
-have [[p q] -> {f} /= /andP [p2_neq0 cp]] := fracpolyE f.
+have [[p q] -> {g} /= /andP [p2_neq0 cp]] := fracpolyE g.
 have [->|p_neq0] := eqVneq p 0; first by rewrite mul0r !rmorph0 fpole0.
 rewrite !fmorph_div /= !map_fracE coprimep_fpole ?rmorph_eq0 ?coprimep_map //=.
 rewrite /tofracpoly map_poly_comp /= horner_map /= rmorph_eq0.
@@ -1167,13 +1167,13 @@ rewrite mulf_neq0 ?expf_eq0 ?lead_coef_eq0 ?negb_and //.
 by rewrite -size_poly_eq0 gtn_eqF ?orbT // (leq_trans _ r_gt1).
 Qed.
 
-Lemma comp_fracpolyX f : ('X %:F) \FPo f = f.
+Lemma comp_fracpolyX g : ('X %:F) \FPo g = g.
 Proof. by rewrite comp_poly_frac map_polyX hornerX. Qed.
 
-Lemma comp_fracpolyXn (m : nat) f : 'X^+m \FPo f = f ^+ m.
+Lemma comp_fracpolyXn (m : nat) g : 'X^+m \FPo g = g ^+ m.
 Proof. by rewrite comp_fracpoly_exp /= comp_fracpolyX. Qed.
 
-Lemma comp_fracpoly_XV f : 'X^-1 \FPo f = f ^-1.
+Lemma comp_fracpoly_XV g : 'X^-1 \FPo g = g ^-1.
 Proof. by rewrite comp_fracpolyV comp_fracpolyX. Qed.
 
 Lemma comp_fracpoly_XV_XV : 'X^-1 \FPo 'X^-1 = 'XF.
@@ -1182,11 +1182,11 @@ Proof. by rewrite comp_fracpoly_XV invrK. Qed.
 Lemma comp_poly_XV p : p%:F \FPo 'X^-1 = \sum_(i < size p) ((p`_i)%:FP) * 'X^-i.
 Proof. by rewrite comp_poly_fracE; apply: eq_bigr => i _; rewrite exprVn. Qed.
 
-Lemma nocomp_polyF p f : nocomp_fracpoly p%:F f = false.
+Lemma nocomp_polyF p g : nocomp_fracpoly p%:F g = false.
 Proof. by rewrite /nocomp_fracpoly map_fracE /= fpole_tofrac. Qed.
 
-Lemma comp_frac_frac p q f : coprimep p q ->
-  (p // q \FPo f) = (p%:F \FPo f) / (q%:F \FPo f).
+Lemma comp_frac_frac p q g : coprimep p q ->
+  (p // q \FPo g) = (p%:F \FPo g) / (q%:F \FPo g).
 Proof.
 move=> cpq; rewrite /comp_fracpoly !fmorph_div /= !map_fracE /=.
 by rewrite coprimep_feval ?coprimep_map // !fpeval_tofrac.
@@ -1194,7 +1194,7 @@ Qed.
 
 End CompFrac.
 
-Notation "f \FPo g" := (comp_fracpoly f g) : ring_scope.
+Notation "g \FPo h" := (comp_fracpoly g h) : ring_scope.
 
 Section MoreCompFrac.
 
@@ -1205,7 +1205,7 @@ Lemma fracpoly_iota_comp_fracpoly (p q : {fracpoly K}) :
 Proof.
 have [ [ p1 p2 -> /= /andP [p2_neq0 coprime_p1_p2 ] ] ] := fracpolyE p.
 rewrite fmorph_div /= !map_fracE !comp_frac_frac // ?fmorph_div ?coprimep_map //.
-by rewrite !comp_poly_frac !to_fracpoly_map_iota !horner_map.
+by rewrite !comp_poly_frac !to_fracpoly_map_f !horner_map.
 Qed.
 
 End MoreCompFrac.
