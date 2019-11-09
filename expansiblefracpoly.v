@@ -33,7 +33,7 @@ Variable K : fieldType.
 Definition fracpoly_of of phant K := {fracpoly K}.
 Notation "{ 'fracpoly' K }" := (fracpoly_of (Phant K)).
 
-Definition devs : pred_class := fun f : {fracpoly K} => (~~ (0.-fppole) f).
+Definition devs := fun f : {fracpoly K} => (~~ (0.-fppole) f).
 
 Lemma devs_invf (p : {poly K}) : p != 0 -> (0.-fppole) p%:F^-1 = (p`_0 == 0).
 Proof. by move => p_neq0; rewrite fpoleV -horner_coef0 froot_tofrac. Qed.
@@ -80,6 +80,12 @@ Proof. by move => dx dy; rewrite devsD // devsN. Qed.
 
 Variable n : nat.
 
+Notation Tfpsp := trXn.
+
+Lemma Tfpsp_is_unit (p : {poly K}) :
+  ((Tfpsp n p) \is a GRing.unit) = (p`_0 != 0).
+Proof. by rewrite unit_tfpsE unitfE coef0_trXn. Qed.
+
 Definition Tfpsfp (x : {fracpoly K}) :=
   if (0.-fppole) x then 0
   else let (x1, x2) := projT1 (fracpolyE x) in (Tfpsp n x1) / (Tfpsp n x2).
@@ -111,7 +117,7 @@ have v0_neq0 : v`_0 != 0.
     apply/negbTE; move: q0_neq0; apply/contra.
     exact: devs_frac.
   by [].
-apply/eqP ; rewrite eq_divr ?Tfpsp_is_unit // -!rmorphM.
+apply/eqP; rewrite (@eq_divr _ (Tfpsp n u)) ?Tfpsp_is_unit // -!rmorphM.
 apply/eqP ; apply: (congr1 _) ; apply/eqP.
 apply/eqP/tofrac_inj/eqP.
 rewrite !rmorphM /= -eq_divf ?raddf_eq0 //; last 2 first.
@@ -237,8 +243,8 @@ Proof.
 move: (fracpolyE x) => [ [u v] /= Hx ] /andP [ v_neq0 coprime_u_v ].
 rewrite Hx fmorph_div /= !map_fracE /=.
 have [ v0_eq0 | v0_neq0 ] := eqVneq v`_0 0; last first.
-+ rewrite Tfpsfp_frac // Tfpsfp_frac; last first.
+- rewrite Tfpsfp_frac // Tfpsfp_frac; last first.
     by rewrite coef_map raddf_eq0 //; apply: fmorph_inj.
-+ by rewrite rmorph_div /= ?Tfpsp_is_unit // !Tfps_map_poly. 
-by rewrite !Tfpsfp_eq0 // ?coef_map ?v0_eq0 /= ?rmorph0 // coprimep_map. 
+- by rewrite rmorph_div /= ?Tfpsp_is_unit // !trXn_map_poly.
+by rewrite !Tfpsfp_eq0 // ?coef_map ?v0_eq0 /= ?rmorph0 // coprimep_map.
 Qed.
